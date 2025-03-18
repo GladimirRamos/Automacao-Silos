@@ -30,7 +30,7 @@
 
 #define BLYNK_TEMPLATE_ID        "TMPL2r6MI0Ptc"
 #define BLYNK_TEMPLATE_NAME      "Automação Silo"
-#define BLYNK_FIRMWARE_VERSION   "0.1.1"
+#define BLYNK_FIRMWARE_VERSION   "0.1.2"
 
 //#define BLYNK_PRINT Serial
 //#define BLYNK_DEBUG   
@@ -55,8 +55,6 @@ RTC_DS1307           RTC;                       // RTC DS1307 - Address I2C (0x6
 Preferences  preferences;
 unsigned int  counterRST;                       // contador de reset's
 
-//uint32_t servicoIoTState;                     // recebe a informação de BlynkState::get();
-//String     StrStateBlynk;                     // string de BlynkState para mostrar no display
 bool    sendBlynk = true;
 
   // ATENÇÃO AO WATCHDOG; AJUSTAR COM MARGEM DE ACORDO COM O TEMPO ABAIXO !!!
@@ -105,16 +103,6 @@ char daysOfTheWeek[7][12] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursd
 #define I2C_SDA 4                             // SDA (ESP32 default GPIO 21)
 
 Adafruit_SSD1306 display(128, 64, &Wire, -1);
-
-//-------------------------------------  Sensor de temperatura -----------------------------------------
-#ifdef __cplusplus
-extern "C" {
-#endif
-uint8_t temprature_sens_read();
-#ifdef __cplusplus
-}
-#endif
-uint8_t temprature_sens_read();
 
 //-------------------------------------  NTP Server time ----------------------------------------------
 const char* ntpServer = "br.pool.ntp.org";      // "pool.ntp.org"; "a.st1.ntp.br";
@@ -244,21 +232,13 @@ unsigned int tempoAtivacao3 = 180; // é o tempo de espera em segundos após o c
 
 #include <ModbusMaster.h>
 ModbusMaster ExtSensor4x1;           // Sensor externo 4x1 (antigo node2) 
-ModbusMaster ExtSensorCWT;        // Sensor externo CWT
-ModbusMaster node3;
-ModbusMaster node4;
-ModbusMaster node5;
-ModbusMaster node6;
-
-// sensor MODBUS CWT-TH04
-int TempS1 = 0; int TempS3 = 0; int TempS4 = 0; int TempS5 = 0;
-int UmiS1  = 0; int UmiS3  = 0; int UmiS4  = 0; int UmiS5  = 0;
+ModbusMaster ExtSensorCWT;           // Sensor externo CWT
 
 // sensor MODBUS 4x1 - Slave ID 32
+// sensor MODBUS CWT - Slave ID 01
 int TempExt    = 0;    int UmiExt = 0; 
 int PresaoExt  = 0;    int LuxExt = 0;
-// sensor MODBUS CWT - Slave ID 01
-int TempExtCWT = 0;    int UmiExtCWT = 0; 
+ 
 
 // ------ protótipo de funções ------
 //void heartBeat(void);
@@ -621,133 +601,35 @@ void Main2(){
     Blynk.beginGroup();                             // https://docs.blynk.io/en/blynk-library-firmware-api/virtual-pins
       Blynk.virtualWrite(V0, UmiExt);             
       Blynk.virtualWrite(V1, TempExt);
-      //Blynk.virtualWrite(V6, UmiExtCWT);             
-      //Blynk.virtualWrite(V7, TempExtCWT);
     Blynk.endGroup();
     //Blynk.virtualWrite(V45, currentDay, "/", currentMonth, " ", currentHour, ":", currentMin, " LOG de Temp. e Umidade enviado");
     minAtualiza = minAtualiza + 15;                 // soma 15 a cada 15 minutos
     if (minAtualiza > 50) {minAtualiza = 0;}        // minAtualiza usado para enviar a cada 15 minutos
   }
-   
-  //unsigned long tempo_usado = millis() - tempo_start;         // cálculo do tempu utilizado até aqui
-  //Serial.printf("Período (ms) do Main2: %u\n", tempo_usado);
+
   Serial.printf("Período (ms) do Main2: %u\n", (millis() - tempo_start)); // cálculo do tempu utilizado até aqui
 
 }
 
 void MODBUS_Sensor(){
 
-  //  ADAPTAÇÕES
-  /*
-  // SENSOR EXTERNO 4x1
-  uint8_t result1 = ExtSensor4x1.readHoldingRegisters( 0x01F4, 8 ); // registro  0x01F4 = 500 
-  Serial.print("\n"); Serial.println("Sensor Externo 4x1 ");
-  Serial.print("Error = "); Serial.println( result1 );   // 0: ok, 226: falha
-  Blynk.virtualWrite(V50, result1);                      // envia Status do Sensor MODBUS (0 = OK, 226 = falha)
-  
-  if (result1 == ExtSensor4x1.ku8MBSuccess){
-    UmiExt    = (ExtSensor4x1.getResponseBuffer(0)/10);  // registro 500 
-    TempExt   = (ExtSensor4x1.getResponseBuffer(1)/10);  // registro 501
-    PresaoExt = (ExtSensor4x1.getResponseBuffer(5));     // registro 505
-    LuxExt    = (ExtSensor4x1.getResponseBuffer(7));     // registro 507
-    Serial.print("Umidade Ext.: "); Serial.print(UmiExt); Serial.println(" %");
-    Serial.print("Temperatura EXt.: "); Serial.print(TempExt); Serial.println(" C");
-    Serial.print("Pressao Atm.: "); Serial.print(PresaoExt); Serial.println(" mbar ");
-    Serial.print("Luminosidade: "); Serial.print(LuxExt); Serial.println(" lux");
-    Blynk.virtualWrite(V51, UmiExt);                     // Envia ao Blynk a informação do SENSOR EXTERNO 4x1
-    Blynk.virtualWrite(V52, TempExt);
-    Blynk.virtualWrite(V56, PresaoExt);
-    Blynk.virtualWrite(V57, LuxExt);
-  } Serial.print("\n"); delay(10);
-  */
-  //  ADAPTAÇÕES FIM
-
-
-  // SENSOR EXTERNO CWT 
+  // SENSOR EXTERNO CWT = ExtSensorCWT
+  // SENSOR EXTERNO 4x1 = ExtSensor4x1
   uint8_t result2 = ExtSensorCWT.readHoldingRegisters( 0, 2 );
   Serial.print("\n"); Serial.println("Sensor Externo CWT ");
   Serial.print("Error = "); Serial.println( result2 );   // 0: ok, 226: falha
   Blynk.virtualWrite(V50, result2);                      // envia Status do Sensor MODBUS (0 = OK, 226 = falha)
   
   if (result2 == ExtSensorCWT.ku8MBSuccess){
-    UmiExtCWT  = (ExtSensorCWT.getResponseBuffer(0)/10);
-    TempExtCWT = (ExtSensorCWT.getResponseBuffer(1)/10);
+    UmiExt    = (ExtSensorCWT.getResponseBuffer(0)/10);
+    TempExt   = (ExtSensorCWT.getResponseBuffer(1)/10);
 
-    //  ADAPTAÇÕES
-    UmiExt     = UmiExtCWT;
-    TempExt    = TempExtCWT;
     Blynk.virtualWrite(V51, UmiExt);                     // Envia ao Blynk a informação do SENSOR EXTERNO 4x1
     Blynk.virtualWrite(V52, TempExt);
     Serial.print("Umidade Ext.:     "); Serial.print(UmiExt); Serial.println(" %");
     Serial.print("Temperatura Ext.: "); Serial.print(TempExt); Serial.println(" C");
-    //  ADAPTAÇÕES FIM
-
-    //Serial.print("Umidade CWT:      "); Serial.print(UmiExtCWT); Serial.println(" %");
-    //Serial.print("Temperatura CWT:  "); Serial.print(TempExtCWT); Serial.println(" C");
-    //Blynk.virtualWrite(V30, UmiExtCWT);                 
-    //Blynk.virtualWrite(V31, TempExtCWT);
   } Serial.print("\n"); delay(5);
 
-  /*
-  uint8_t result3 = node3.readHoldingRegisters( 0, 2 );
-  Serial.print("\n"); Serial.println("Sensor 1");
-  Serial.print("Error = "); Serial.println( result3 ); // 0: ok, 226: falha
-  Blynk.virtualWrite(V2, result3);                     // envia Status do Sensor MODBUS (0 = OK, 226 = falha)
-  
-  if (result3 == node3.ku8MBSuccess){
-    UmiS3  = (node3.getResponseBuffer(0)/10.00);
-    TempS3 = (node3.getResponseBuffer(1)/10.00);
-    Serial.print("Umidade: "); Serial.print(UmiS3); Serial.println(" %");
-    Serial.print("Temperatura: "); Serial.print(TempS3); Serial.println(" C");
-    Blynk.virtualWrite(V30, UmiS3);                    // Envia ao Blynk a informação do SENSOR 1 
-    Blynk.virtualWrite(V31, TempS3);
-  }
-  Serial.print("\n"); delay(10);
-  
-  uint8_t result4 = node4.readHoldingRegisters( 0, 2 );
-  Serial.print("\n"); Serial.println("Sensor 2");
-  Serial.print("Error = "); Serial.println( result4 ); // 0: ok, 226: falha
-  Blynk.virtualWrite(V3, result4);                     // envia Status do Sensor MODBUS (0 = OK, 226 = falha)
-  
-  if (result4 == node4.ku8MBSuccess){
-    UmiS4  = (node4.getResponseBuffer(0)/10.00);
-    TempS4 = (node4.getResponseBuffer(1)/10.00);
-    Serial.print("Umidade: "); Serial.print(UmiS4); Serial.println(" %");
-    Serial.print("Temperatura: "); Serial.print(TempS4); Serial.println(" C");
-    Blynk.virtualWrite(V32, UmiS4);                    // Envia ao Blynk a informação do SENSOR 2
-    Blynk.virtualWrite(V33, TempS4);
-  }
-  Serial.print("\n"); delay(10);
-
-  uint8_t result5 = node5.readHoldingRegisters( 0, 2 );
-  Serial.print("\n"); Serial.println("Sensor 3");
-  Serial.print("Error = "); Serial.println( result5 ); // 0: ok, 226: falha
-  Blynk.virtualWrite(V4, result5);                     // envia Status do Sensor MODBUS (0 = OK, 226 = falha)
-  
-  if (result5 == node5.ku8MBSuccess){
-    UmiS5  = (node5.getResponseBuffer(0)/10.00);
-    TempS5 = (node5.getResponseBuffer(1)/10.00);
-    Serial.print("Umidade: "); Serial.print(UmiS5); Serial.println(" %");
-    Serial.print("Temperatura: "); Serial.print(TempS5); Serial.println(" C");
-    Blynk.virtualWrite(V34, UmiS5);                   // Envia ao Blynk a informação do SENSOR 3
-    Blynk.virtualWrite(V35, TempS5);
-  }
-  Serial.print("\n"); delay(10);
-  
-  uint8_t result6 = node6.readHoldingRegisters( 0, 2 );
-  Serial.print("\n"); Serial.println("Sensor 04");
-  Serial.print("Error = "); Serial.println( result6 ); // 0: ok, 226: falha
-  Blynk.virtualWrite(V5, result6);                     // envia Status do Sensor MODBUS (0 = OK, 226 = falha)
-  
-  if (result6 == node6.ku8MBSuccess){
-    UmiS1  = (node6.getResponseBuffer(0)/10.00);
-    TempS1 = (node6.getResponseBuffer(1)/10.00);
-    Serial.print("Umidade: "); Serial.print(UmiS1); Serial.println(" %");
-    Serial.print("Temperatura: "); Serial.print(TempS1); Serial.println(" C");
-    Blynk.virtualWrite(V36, UmiS1);                    // Envia ao Blynk a informação do SENSOR 4
-    Blynk.virtualWrite(V37, TempS1);
-  }
-  */
 }
 
 void sendLogReset(){
@@ -1245,11 +1127,6 @@ void setup(){
   Serial1.begin(9600, SERIAL_8N1, 14, 27);    // porta RS-485 do hardware KC-868-A6
   ExtSensor4x1.begin  (32, Serial1);              // Slave address: 20H  Sensor 4x1
   ExtSensorCWT.begin  ( 1, Serial1);              // Slave address: 01H  Sensor CWT-TH04
-
-  node3.begin         ( 3, Serial1);              // Slave address: 03H
-  node4.begin         ( 4, Serial1);              // Slave address: 04H 
-  node5.begin         ( 5, Serial1);              // Slave address: 05H
-  node6.begin         ( 6, Serial1);              // Slave address: 06H
 
   delay(10000);                               // delay necessário para o RTC DS1307 inicializar
   if (! RTC.begin()) {
