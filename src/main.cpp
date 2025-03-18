@@ -2064,7 +2064,7 @@ void loop() {
  // testa se o botão USER foi pressionado OU 
  // se esta na hora de ajustar e vai para rotina de set RTC, tenta por 9 segundos
  if ((flagSetRTC == 1) ||
-     /*(currentWday = 1) && */(currentHour == 6) && (currentMin == 15) && (currentSec < 9)) {
+     /*(currentWday = 1) && */(currentHour == 2) && (currentMin == 10) && (currentSec < 10)) {
      setRTC();}
 
  if (flagIoTStatus == 1){
