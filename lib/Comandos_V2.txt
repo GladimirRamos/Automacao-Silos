@@ -1,0 +1,122 @@
+// -------------------------------------- Controle de saidas v2 --------------------------------------
+// 08.03.2025
+// interlock de comandos - se os tres estiverem desligados = false
+
+void ComandoOutput() {
+//Blynk.virtualWrite(V45, currentDay, "/", currentMonth, " ", currentHour, ":", currentMin, " -", timer_Motores," Timer Motores");
+//Blynk.virtualWrite(V45, currentDay, "/", currentMonth, " ", currentHour, ":", currentMin, " -", varModoOper," MODO");
+// testa o modo de operação do sistema
+  switch (varModoOper){
+   case 0:                                               // 0 = esta no modo remoto - controle manual no app 
+    if (forcaLiga1==1 && interlock2 && interlock3){      // se o botao do app foi apertado
+       interlock1 = false;                               // interlock do Silo 1, nao deixa outros ligarem
+       Blynk.virtualWrite(V44, (timer_Motores % 2 == 0));     // pisca led V44 status do motor, terminar em número par!
+       //Blynk.virtualWrite(V45, currentDay, "/", currentMonth, " ", currentHour, ":", currentMin, " -", timer_Motores," Temporizando em Manual");
+       
+       timer_Motores = timer_Motores+1;                  // contador incrementa a cada execução usado com timer dos motores
+       if (timer_Motores >= tempoAtivacao){              // se passou XX segundos
+          // Liga Silo 1 = saidas 1 e 2
+          output_PLC = output_PLC & 0b1111100;           // faz AND, onde apenas bits 0 = 0
+          Wire.beginTransmission(0x24);                  // escreve na saida do PLC
+          Wire.write(output_PLC);                        // 0 = rele ligado, 1 = desligado
+          Wire.endTransmission();
+     
+          interlock1 = true;                             // libera para a ativacão de outro Silo
+          timer_Motores = 0;
+          forcaLiga1 = 0;                                // força variavel a ficar em zero
+          cicloOFF = 0;
+          Blynk.virtualWrite(V45, currentDay, "/", currentMonth, " ", currentHour, ":", currentMin," Silo 1 ligado pelo App");
+       }  
+    }
+
+    if (forcaDESLiga1 == 1){ 
+                 // Desliga Silo 1 = saidas 1 e 2
+                 output_PLC = output_PLC | 0b00000011;   // faz OU, apenas bit 0 = 1
+                 Wire.beginTransmission(0x24);           // escreve na saida do PLC
+                 Wire.write(output_PLC);                 // 0 = rele ligado, 1 = desligado
+                 Wire.endTransmission();
+
+                 timer_Motores = 0;
+                 forcaDESLiga1 = 0;
+                 cicloON = 0;
+                 Blynk.virtualWrite(V45, currentDay, "/", currentMonth, " ", currentHour, ":", currentMin," Silo 1 desligado pelo App");                    
+     }
+   break;
+
+   case 1:                                        // 1 = esta no modo de controle via agendamento
+    if ((currentSecDAY >= HoraLigaPGMMem) && (currentSecDAY <= HoraDESLigaPGMMem) && WdayON >= 0) {
+      for (cicloOFF; cicloOFF < 1; cicloOFF++) {                   
+          // Desliga Silo 1 = saidas 1 e 2
+          output_PLC = output_PLC | 0b00000011;   // faz OU, apenas bit 0 = 1
+          Wire.beginTransmission(0x24);           // escreve na saida do PLC
+          Wire.write(output_PLC);                 // 0 = rele ligado, 1 = desligado
+          Wire.endTransmission();
+
+          Blynk.virtualWrite(V45, currentDay, "/", currentMonth, " ", currentHour, ":", currentMin," Silo 1 desligado por Agenda");
+          Serial.print (cicloOFF); Serial.println(" - DESLIGADO VIA AGENDA !!!"); 
+          timer_Motores = 0;
+          cicloON = 0;                            // habilita executar uma vez o comando 
+          }
+
+    } else if (oldStatusMotor1){                        // enquanto o motor estiver desligado executa
+             interlock1 = false;                        // interlock do Silo 1, nao deixa outros ligarem
+             Blynk.virtualWrite(V44, (timer_Motores % 2 == 0));     // pisca led V44 status do motor, terminar em número par!
+             //Blynk.virtualWrite(V45, currentDay, "/", currentMonth, " ", currentHour, ":", currentMin, " -", timer_Motores," Temporizando em Agenda");
+             
+             timer_Motores = timer_Motores+1;           // contador incrementa a cada execução usado com timer dos motores
+             if (timer_Motores >= tempoAtivacao){                  // se passou XX segundos
+              for (cicloON; cicloON < 1; cicloON++) {
+              // Liga Silo 1 = saidas 1 e 2
+                output_PLC = output_PLC & 0b1111100;    // faz AND, onde apenas bits 0 = 0
+                Wire.beginTransmission(0x24);           // escreve na saida do PLC
+                Wire.write(output_PLC);                 // 0 = rele ligado, 1 = desligado
+                Wire.endTransmission();
+        
+                interlock1 = true;                      // libera para a ativacão dos outros Silos
+                timer_Motores = 0;
+                cicloOFF = 0;
+                Blynk.virtualWrite(V45, currentDay, "/", currentMonth, " ", currentHour, ":", currentMin," Silo 1 ligado por Agenda");
+               }
+              }
+            }
+   break;
+    
+   case 2: 
+   if (UmiExt <= setUmidade1 && oldStatusMotor1){  // enquanto umidade menor ou igual e motor off executa
+    interlock1 = false;                           // interlock do Silo 1, nao deixa outros ligarem
+    Blynk.virtualWrite(V44, (timer_Motores % 2 == 0));     // pisca led V44 status do motor, terminar em número par!
+    //Blynk.virtualWrite(V45, currentDay, "/", currentMonth, " ", currentHour, ":", currentMin, " -", timer_Motores," Temporizando em AUTO");
+    
+    timer_Motores = timer_Motores+1;              // contador incrementa a cada execução usado com timer dos motores
+    if (timer_Motores >= tempoAtivacao){          // se passou XX segundos
+     for (cicloON; cicloON < 1; cicloON++) {
+     // Liga Silo 1 = saidas 1 e 2
+       output_PLC = output_PLC & 0b1111100;       // faz AND, onde apenas bits 0 = 0
+       Wire.beginTransmission(0x24);              // escreve na saida do PLC
+       Wire.write(output_PLC);                    // 0 = rele ligado, 1 = desligado
+       Wire.endTransmission();
+
+       interlock1 = true;                         // libera para a ativacão dos outros Silos
+       timer_Motores = 0;
+       cicloOFF = 0;
+       Blynk.virtualWrite(V45, currentDay, "/", currentMonth, " ", currentHour, ":", currentMin," Silo 1 ligado por AUTO");
+      }
+     }
+    } else if ((UmiExt -2) > setUmidade1) {        // enquanto umidade maior executa desliga
+        for (cicloOFF; cicloOFF < 1; cicloOFF++) {                  
+        // Desliga Silo 1 = saidas 1 e 2
+        output_PLC = output_PLC | 0b00000011;     // faz OU, apenas bit 0 = 1
+        Wire.beginTransmission(0x24);             // escreve na saida do PLC
+        Wire.write(output_PLC);                   // 0 = rele ligado, 1 = desligado
+        Wire.endTransmission();
+
+        Blynk.virtualWrite(V45, currentDay, "/", currentMonth, " ", currentHour, ":", currentMin," Silo 1 desligado por AUTO");
+        Serial.print (cicloOFF); Serial.println(" - DESLIGADO VIA AGENDA !!!"); 
+        timer_Motores = 0;
+        cicloON = 0;                              // habilita executar uma vez o comando 
+        }
+      }
+
+    break;
+  }
+}
