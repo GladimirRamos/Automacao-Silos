@@ -736,6 +736,11 @@ BLYNK_WRITE(V39){
   BotaoRESET = param.asInt();                   // função de RESET que força a atuação do watchtdog
   }
 
+int rearme;                                     // Comando remoto para rearme do quadro
+BLYNK_WRITE(V55){                               // quando aperta = 1; solta = 0
+      rearme = param.asInt();
+    }
+
 // *************************************************** //
 //            Interações APP e Silo 1
 // *************************************************** //
@@ -1145,6 +1150,24 @@ void setup(){
 
 // ----------------------------- temporizador para ler os botoes do app --------------------------------------
 void timerButtonAPP(){                        // timer de botao pressionado no app
+
+  if (rearme == 1){                           // recebido do V55
+  Serial.println("Recebido o comando rearme do quadro!");
+  Blynk.virtualWrite(V45, currentDay, "/", currentMonth, " ", currentHour, ":", currentMin, " Comando rearme do quadro");
+      /*
+      if(rele5 == 1){
+      output_PLC = output_PLC & 0b11101111;          // faz AND, apenas bit 1 = 0
+                       Wire.beginTransmission(0x24);           // escreve na saida do PLC
+                       Wire.write(output_PLC);                 // 0 = rele ligado, 1 = desligado
+                       Wire.endTransmission();
+      } else {
+        output_PLC = output_PLC | 0b00010000;       // faz OU, apenas bit 1 = 1
+                       Wire.beginTransmission(0x24);           // escreve na saida do PLC
+                       Wire.write(output_PLC);                 // 0 = rele ligado, 1 = desligado
+                       Wire.endTransmission();
+        }
+        */
+ }
  // *************************************************************************** //
  //            Interações do temporizador de botoes do APP e Silo 1
  // *************************************************************************** //
