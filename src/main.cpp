@@ -54,11 +54,11 @@ unsigned char output_PLC = 0b11111111;          // variavel para controle dos re
 RTC_DS1307           RTC;                       // RTC DS1307 - Address I2C (0x68)
 Preferences  preferences;
 unsigned int  counterRST;                       // contador de reset's
-
 bool    sendBlynk = true;
 
   // ATENÇÃO AO WATCHDOG; AJUSTAR COM MARGEM DE ACORDO COM O TEMPO ABAIXO !!!
-int tempoStart  =      1; // 60;    // ajusta o tempo de espera em segundos para o inicio do sistema a cada reset
+int tempoStart  =     10; // tempo de espera em segundos para o inicio do sistema a cada reset minimo 10 segundos para RTC start
+int timerON     =      0; // usado para mostrar só uma vez a cada reset a tela inicial no diplay com a logomarca
 int minAtualiza =      0; // usado para enviar dados ao servidor a cada 15 minutos, começa a enviar no minAtualiza
 int BotaoRESET;           // BotaoRESET = Virtual do APP
 
@@ -152,7 +152,6 @@ int varModoOper1;
 int cicloON_1 = 0;                // usado na rotina de acionamentos por agendamento
 int cicloOFF_1 = 0; 
 int timer_Motor1 = 0;             // contador de um em um segundo chamado pelo na rotina Main2
-bool interlock1 = true;           // interlock Silo 1 para controle dos comandos de saida
 bool statusMotor1;                // motor do Silo 1 esta em ON (true) ou OFF (false)
 bool oldStatusMotor1;             // usado para comparar e gravar na memória o estado do motor VAMOS USAR ?!
 int setUmidade1;                  // busca valor da memória - Setup de umidade para controle em modo Automatico(2)
@@ -187,7 +186,6 @@ int varModoOper2;
 int cicloON_2 = 0;                // usado na rotina de acionamentos por agendamento
 int cicloOFF_2 = 0; 
 int timer_Motor2 = 0;             // contador de um em um segundo chamado pelo na rotina Main2
-bool interlock2 = true;           // interlock Silo 1 para controle dos comandos de saida
 bool statusMotor2;                // motor do Silo 1 esta em ON (true) ou OFF (false)
 bool oldStatusMotor2;             // usado para comparar e gravar na memória o estado do motor VAMOS USAR ?!
 int setUmidade2;                  // busca valor da memória - Setup de umidade para controle em modo Automatico(2)
@@ -222,7 +220,6 @@ int varModoOper3;
 int cicloON_3 = 0;                // usado na rotina de acionamentos por agendamento
 int cicloOFF_3 = 0; 
 int timer_Motor3 = 0;             // contador de um em um segundo chamado pelo na rotina Main2
-bool interlock3 = true;           // interlock Silo 1 para controle dos comandos de saida
 bool statusMotor3;                // motor do Silo 1 esta em ON (true) ou OFF (false)
 bool oldStatusMotor3;             // usado para comparar e gravar na memória o estado do motor VAMOS USAR ?!
 int setUmidade3;                  // busca valor da memória - Setup de umidade para controle em modo Automatico(2)
@@ -301,27 +298,15 @@ void Main2(){
 
   Serial.print("SETUP de Umidade Silo 1: ");
   Serial.println(setUmidade1);                      
-  int oldsetUmidade1;
-  if (setUmidade1 != oldsetUmidade1){
-    Blynk.virtualWrite(V38, setUmidade1);
-    oldsetUmidade1 = setUmidade1;}
-  //Blynk.virtualWrite(V38, setUmidade1);
+  Blynk.virtualWrite(V38, setUmidade1);
 
   Serial.print("SETUP de Umidade Silo 2: ");
-  Serial.println(setUmidade2);
-  int oldsetUmidade2;
-  if (setUmidade2 != oldsetUmidade2){
-    Blynk.virtualWrite(V66, setUmidade2);
-    oldsetUmidade2 = setUmidade2;}                      
-  //Blynk.virtualWrite(V66, setUmidade2);
+  Serial.println(setUmidade2);                   
+  Blynk.virtualWrite(V66, setUmidade2);
 
   Serial.print("SETUP de Umidade Silo 3: ");
-  Serial.println(setUmidade3);   
-  int oldsetUmidade3;
-  if (setUmidade3 != oldsetUmidade3){
-    Blynk.virtualWrite(V86, setUmidade3);
-    oldsetUmidade3 = setUmidade3;}                    
-  //Blynk.virtualWrite(V86, setUmidade3);       // Envia ao Blynk informação do setup da umidade  
+  Serial.println(setUmidade3);                 
+  Blynk.virtualWrite(V86, setUmidade3);       // Envia ao Blynk informação do setup da umidade  
 
   // mostra no display:  rssi
   display.clearDisplay();
@@ -1114,8 +1099,15 @@ void setup(){
                      }
         */
 
-  PrintResetReason();      // imprime na serial razao do ultimo reset
+  PrintResetReason();                        // imprime na serial razao do ultimo reset
 
+  Serial1.begin(9600, SERIAL_8N1, 14, 27);   // porta RS-485 do hardware KC-868-A6
+  ExtSensor4x1.begin  (32, Serial1);         // Slave address: 20H  Sensor 4x1
+  ExtSensorCWT.begin  ( 1, Serial1);         // Slave address: 01H  Sensor CWT-TH04
+
+  display.begin(SSD1306_SWITCHCAPVCC, 0x3C); // Address 0x3C (128x64)
+  timerStart();                              // rotina de logomarca temporizada (minimo 10 segundos para RTC start)
+  /*
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C); // Address 0x3C (128x64)
   display.clearDisplay();                    // limpa o buffer
   display.setTextSize(2);                    // tamanho do texto
@@ -1123,12 +1115,9 @@ void setup(){
   display.setCursor(5, 25);                  // coluna, linha 
   display.println("Iniciando!");             // informação
   display.display();                         // mostra na tela
-
-  Serial1.begin(9600, SERIAL_8N1, 14, 27);    // porta RS-485 do hardware KC-868-A6
-  ExtSensor4x1.begin  (32, Serial1);              // Slave address: 20H  Sensor 4x1
-  ExtSensorCWT.begin  ( 1, Serial1);              // Slave address: 01H  Sensor CWT-TH04
-
   delay(10000);                               // delay necessário para o RTC DS1307 inicializar
+  */
+
   if (! RTC.begin()) {
      Serial.println("Não foi possível encontrar o RTC!");
      failMSG("FALHA RTC");
@@ -1439,7 +1428,6 @@ void getDataHora(){
 }
 
 void ComandoOutput() {
-// interlock de comandos - se os tres estiverem desligados = false
 //Blynk.virtualWrite(V45, currentDay, "/", currentMonth, " ", currentHour, ":", currentMin, " -", timer_Motor1," Timer Motores");
 //Blynk.virtualWrite(V45, currentDay, "/", currentMonth, " ", currentHour, ":", currentMin, " -", varModoOper1," MODO");
 
@@ -1454,8 +1442,7 @@ void ComandoOutput() {
 
   switch (varModoOper1){
    case 0:                                               // 0 = esta no modo remoto - controle manual no app 
-    if (forcaLiga1==1 && interlock2 && interlock3){      // se o botao do app foi apertado
-       //interlock1 = false;                               // interlock do Silo 1, nao deixa outros ligarem
+    if (forcaLiga1==1){      // se o botao do app foi apertado
        //Blynk.setProperty(V44, "color", "#EB4E45"); // laranja  "#F7CB46"
        Blynk.virtualWrite(V44, (timer_Motor1 % 2 == 0)); // pisca led V44 status do motor, terminar em número par!
        //Blynk.virtualWrite(V45, currentDay, "/", currentMonth, " ", currentHour, ":", currentMin, " -", timer_Motor1," Temporizando em Manual");
@@ -1474,7 +1461,6 @@ void ComandoOutput() {
           Wire.write(output_PLC);                        // 0 = rele ligado, 1 = desligado
           Wire.endTransmission();
      
-          //interlock1 = true;                             // libera para a ativacão de outro Silo
           timer_Motor1 = 0;
           forcaLiga1 = 0;                                // força variavel a ficar em zero
           cicloOFF_1 = 0;
@@ -1521,7 +1507,6 @@ void ComandoOutput() {
           }
 
     } else if (oldStatusMotor1){                        // enquanto o motor estiver desligado executa
-             //interlock1 = false;                        // interlock do Silo 1, nao deixa outros ligarem
              Blynk.virtualWrite(V44, (timer_Motor1 % 2 == 0));     // pisca led V44 status do motor, terminar em número par!
              //Blynk.virtualWrite(V45, currentDay, "/", currentMonth, " ", currentHour, ":", currentMin, " -", timer_Motor1," Temporizando em Agenda");
              
@@ -1539,8 +1524,7 @@ void ComandoOutput() {
               Wire.beginTransmission(0x24);             // escreve na saida do PLC
               Wire.write(output_PLC);                   // 0 = rele ligado, 1 = desligado
               Wire.endTransmission();
-        
-              //interlock1 = true;                        // libera para a ativacão dos outros Silos
+
               timer_Motor1 = 0;
               cicloOFF_1 = 0;
               }
@@ -1550,7 +1534,6 @@ void ComandoOutput() {
     
    case 2: 
    if (UmiExt <= setUmidade1 && oldStatusMotor1){       // enquanto umidade menor ou igual e motor off executa
-    //interlock1 = false;                                 // interlock do Silo 1, nao deixa outros ligarem
     Blynk.virtualWrite(V44, (timer_Motor1 % 2 == 0));   // pisca led V44 status do motor, terminar em número par!
     //Blynk.virtualWrite(V45, currentDay, "/", currentMonth, " ", currentHour, ":", currentMin, " -", timer_Motor1," Temporizando em AUTO");
     
@@ -1569,7 +1552,6 @@ void ComandoOutput() {
        Wire.write(output_PLC);                          // 0 = rele ligado, 1 = desligado
        Wire.endTransmission();
 
-       //interlock1   = true;                             // libera para a ativacão dos outros Silos
        timer_Motor1 = 0;
        cicloOFF_1   = 0;
       }
@@ -1607,8 +1589,7 @@ if (timer_Motor2 > tempoAtivacao2){
 
  switch (varModoOper2){
   case 0:                                               // 0 = esta no modo remoto - controle manual no app 
-   if (forcaLiga2==1 && interlock1 && interlock3){      // se o botao do app foi apertado
-      //interlock2 = false;                               // interlock do Silo 1, nao deixa outros ligarem
+   if (forcaLiga2==1){      // se o botao do app foi apertado
       Blynk.virtualWrite(V72, (timer_Motor2 % 2 == 0)); // pisca led V44 status do motor, terminar em número par!
       //Blynk.virtualWrite(V45, currentDay, "/", currentMonth, " ", currentHour, ":", currentMin, " -", timer_Motor1," Temporizando em Manual");
       
@@ -1626,7 +1607,6 @@ if (timer_Motor2 > tempoAtivacao2){
          Wire.write(output_PLC);                        // 0 = rele ligado, 1 = desligado
          Wire.endTransmission();
     
-         //interlock2   = true;                           // libera para a ativacão de outro Silo
          timer_Motor2 = 0;
          forcaLiga2   = 0;                              // força variavel a ficar em zero
          cicloOFF_2   = 0;
@@ -1673,7 +1653,6 @@ if (timer_Motor2 > tempoAtivacao2){
          }
 
    } else if (oldStatusMotor2){                        // enquanto o motor estiver desligado executa
-            //interlock2 = false;                        // interlock do Silo 1, nao deixa outros ligarem
             Blynk.virtualWrite(V72, (timer_Motor2 % 2 == 0));     // pisca led V44 status do motor, terminar em número par!
             //Blynk.virtualWrite(V45, currentDay, "/", currentMonth, " ", currentHour, ":", currentMin, " -", timer_Motor1," Temporizando em Agenda");
             
@@ -1691,8 +1670,7 @@ if (timer_Motor2 > tempoAtivacao2){
              Wire.beginTransmission(0x24);             // escreve na saida do PLC
              Wire.write(output_PLC);                   // 0 = rele ligado, 1 = desligado
              Wire.endTransmission();
-       
-             //interlock2   = true;                      // libera para a ativacão dos outros Silos
+
              timer_Motor2 = 0;
              cicloOFF_2   = 0;
              }
@@ -1702,7 +1680,6 @@ if (timer_Motor2 > tempoAtivacao2){
    
   case 2: 
   if (UmiExt <= setUmidade2 && oldStatusMotor2){       // enquanto umidade menor ou igual e motor off executa
-   //interlock2 = false;                                 // interlock do Silo 1, nao deixa outros ligarem
    Blynk.virtualWrite(V72, (timer_Motor2 % 2 == 0));   // pisca led V44 status do motor, terminar em número par!
    //Blynk.virtualWrite(V45, currentDay, "/", currentMonth, " ", currentHour, ":", currentMin, " -", timer_Motor1," Temporizando em AUTO");
    
@@ -1721,7 +1698,6 @@ if (timer_Motor2 > tempoAtivacao2){
       Wire.write(output_PLC);                          // 0 = rele ligado, 1 = desligado
       Wire.endTransmission();
 
-      //interlock2   = true;                             // libera para a ativacão dos outros Silos
       timer_Motor2 = 0;
       cicloOFF_2   = 0;
      }
@@ -1759,8 +1735,7 @@ if (timer_Motor3 > tempoAtivacao3){
 
  switch (varModoOper3){
   case 0:                                               // 0 = esta no modo remoto - controle manual no app 
-   if (forcaLiga3==1 && interlock1 && interlock2){      // se o botao do app foi apertado
-      //interlock3 = false;                               // interlock do Silo 1, nao deixa outros ligarem
+   if (forcaLiga3==1){      // se o botao do app foi apertado
       Blynk.virtualWrite(V92, (timer_Motor3 % 2 == 0)); // pisca led V44 status do motor, terminar em número par!
       //Blynk.virtualWrite(V45, currentDay, "/", currentMonth, " ", currentHour, ":", currentMin, " -", timer_Motor1," Temporizando em Manual");
       
@@ -1777,8 +1752,7 @@ if (timer_Motor3 > tempoAtivacao3){
          Wire.beginTransmission(0x24);                  // escreve na saida do PLC
          Wire.write(output_PLC);                        // 0 = rele ligado, 1 = desligado
          Wire.endTransmission();
-    
-         //interlock3   = true;                           // libera para a ativacão de outro Silo
+
          timer_Motor3 = 0;
          forcaLiga3   = 0;                              // força variavel a ficar em zero
          cicloOFF_3   = 0;
@@ -1825,7 +1799,6 @@ if (timer_Motor3 > tempoAtivacao3){
          }
 
    } else if (oldStatusMotor3){                        // enquanto o motor estiver desligado executa
-            //interlock3 = false;                        // interlock do Silo 1, nao deixa outros ligarem
             Blynk.virtualWrite(V92, (timer_Motor3 % 2 == 0));     // pisca led V44 status do motor, terminar em número par!
             //Blynk.virtualWrite(V45, currentDay, "/", currentMonth, " ", currentHour, ":", currentMin, " -", timer_Motor1," Temporizando em Agenda");
             
@@ -1843,8 +1816,7 @@ if (timer_Motor3 > tempoAtivacao3){
              Wire.beginTransmission(0x24);             // escreve na saida do PLC
              Wire.write(output_PLC);                   // 0 = rele ligado, 1 = desligado
              Wire.endTransmission();
-       
-             //interlock3   = true;                      // libera para a ativacão dos outros Silos
+
              timer_Motor3 = 0;
              cicloOFF_3   = 0;
              }
@@ -1854,7 +1826,6 @@ if (timer_Motor3 > tempoAtivacao3){
    
   case 2: 
   if (UmiExt <= setUmidade3 && oldStatusMotor3){       // enquanto umidade menor ou igual e motor off executa
-   //interlock3 = false;                                 // interlock do Silo 1, nao deixa outros ligarem
    Blynk.virtualWrite(V92, (timer_Motor3 % 2 == 0));   // pisca led V44 status do motor, terminar em número par!
    //Blynk.virtualWrite(V45, currentDay, "/", currentMonth, " ", currentHour, ":", currentMin, " -", timer_Motor1," Temporizando em AUTO");
    
@@ -1873,7 +1844,6 @@ if (timer_Motor3 > tempoAtivacao3){
       Wire.write(output_PLC);                          // 0 = rele ligado, 1 = desligado
       Wire.endTransmission();
 
-      //interlock3   = true;                             // libera para a ativacão dos outros Silos
       timer_Motor3 = 0;
       cicloOFF_3   = 0;
      }
@@ -1901,7 +1871,7 @@ if (timer_Motor3 > tempoAtivacao3){
  }
 }
 
-int timerON = 0;            // executa uma vez timer de X segundos configurados em tempoStart a cada reinicio
+//int timerON = 0;            // executa uma vez timer de X segundos configurados em tempoStart a cada reinicio
 void timerStart() {
   if (timerON != 1){
   Serial.println("Temporizando início do sistema...  "); 
@@ -1935,7 +1905,7 @@ void timerStart() {
 
 void loop() {
  heartBeat();                        // rotina na biblioteca HeartBeat.h
- timerStart();
+ //timerStart();                     // rotina de logomarca temporizada
  BlynkEdgent.run();
 
  // testa se o botão USER foi pressionado OU 
