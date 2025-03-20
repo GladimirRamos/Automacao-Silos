@@ -28,10 +28,12 @@
  - RTC: ajuste automático via NTP com um click rápido no GPOI0 ou em horario definido
 */
 
-#define BLYNK_TEMPLATE_ID        "TMPL2r6MI0Ptc"
-#define BLYNK_TEMPLATE_NAME      "Automação Silo"
-#define BLYNK_FIRMWARE_VERSION   "0.1.2"
+//#define BLYNK_TEMPLATE_ID        "TMPL2r6MI0Ptc"
+//#define BLYNK_TEMPLATE_NAME      "Automação Silo"
+#define BLYNK_TEMPLATE_ID        "TMPL2NIQXip7y"
+#define BLYNK_TEMPLATE_NAME      "Área de Teste"
 
+#define BLYNK_FIRMWARE_VERSION   "0.1.2"
 //#define BLYNK_PRINT Serial
 //#define BLYNK_DEBUG   
 //#define APP_DEBUG
