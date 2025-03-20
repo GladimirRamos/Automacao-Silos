@@ -99,8 +99,12 @@ int  monthIndex[122] = {0,2,4,8,10,12,14,16,17,18,20,22};
 //int  monthIndex[122] ={0,3,6,9,12,15,18,21,24,27,30,33};
 char daysOfTheWeek[7][12] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
 
-#define I2C_SCL 15                            // SCL (ESP32 default GPIO 22)
-#define I2C_SDA 4                             // SDA (ESP32 default GPIO 21)
+#define I2C_SCL 15                             // SCL (ESP32 default GPIO 22)
+#define I2C_SDA 4                              // SDA (ESP32 default GPIO 21)
+
+#define rearme_PIN 12                          // GPIO12 pino para rearme do quadro
+//#define CANAL_DAC0 25                        // Definição do canal DAC GPIO 25 - Saida DAC_01 da KC868-A6 
+//#define CANAL_DAC1 26                        // Definição do canal DAC GPIO 26 - Saida DAC_02 da KC868-A6
 
 Adafruit_SSD1306 display(128, 64, &Wire, -1);
 
@@ -1007,14 +1011,17 @@ BLYNK_WRITE(V85){                                   // desce valor de setUmidade
 
 void setup(){
   // configuração do watchdog
-  rtc_wdt_protect_off();                  //Disable RTC WDT write protection
+  rtc_wdt_protect_off();               //Disable RTC WDT write protection
   rtc_wdt_set_stage(RTC_WDT_STAGE0, RTC_WDT_STAGE_ACTION_RESET_RTC);
   rtc_wdt_set_time (RTC_WDT_STAGE0, WDT_TIMEOUT);
-  rtc_wdt_enable();                       //Start the RTC WDT timer
-  rtc_wdt_protect_on();                   //Enable RTC WDT write protection
+  rtc_wdt_enable();                    //Start the RTC WDT timer
+  rtc_wdt_protect_on();                //Enable RTC WDT write protection
 
   pinMode(Heartbeat_PIN,OUTPUT);       // vinculo para setup do pino na biblioteca HeartBeat.h
-
+  pinMode(rearme_PIN,OUTPUT);
+  //dacWrite(CANAL_DAC0,   0);         // Saida DAC_01 da KC868-A6 - start ligado
+  //dacWrite(CANAL_DAC1, 255);         // Saida DAC_02 da KC868-A6 - start desligado
+  // DAC vai pulsar a cada reset ou atualização de software devido ao hardware (CI LM258)
   Serial.begin(115200);
   Wire.begin(I2C_SDA, I2C_SCL);        // ajusta os pinos do I2C
 
@@ -1152,22 +1159,14 @@ void setup(){
 void timerButtonAPP(){                        // timer de botao pressionado no app
 
   if (rearme == 1){                           // recebido do V55
-  Serial.println("Recebido o comando rearme do quadro!");
-  Blynk.virtualWrite(V45, currentDay, "/", currentMonth, " ", currentHour, ":", currentMin, " Comando rearme do quadro");
-      /*
-      if(rele5 == 1){
-      output_PLC = output_PLC & 0b11101111;          // faz AND, apenas bit 1 = 0
-                       Wire.beginTransmission(0x24);           // escreve na saida do PLC
-                       Wire.write(output_PLC);                 // 0 = rele ligado, 1 = desligado
-                       Wire.endTransmission();
+      Serial.println("Recebido o comando rearme do quadro!");
+      Blynk.virtualWrite(V45, currentDay, "/", currentMonth, " ", currentHour, ":", currentMin, " Comando REARME do Quadro Geral");
+      digitalWrite(rearme_PIN, HIGH);
+      delay(2000);
       } else {
-        output_PLC = output_PLC | 0b00010000;       // faz OU, apenas bit 1 = 1
-                       Wire.beginTransmission(0x24);           // escreve na saida do PLC
-                       Wire.write(output_PLC);                 // 0 = rele ligado, 1 = desligado
-                       Wire.endTransmission();
-        }
-        */
- }
+        digitalWrite(rearme_PIN, LOW);
+        }      
+
  // *************************************************************************** //
  //            Interações do temporizador de botoes do APP e Silo 1
  // *************************************************************************** //
