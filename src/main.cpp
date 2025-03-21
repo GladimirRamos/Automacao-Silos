@@ -27,11 +27,16 @@
 
  - RTC: ajuste automático via NTP com um click rápido no GPOI0 ou em horario definido
 */
+// sensor MODBUS 4x1 - Slave ID 32
+// sensor MODBUS CWT - Slave ID 01
 
 //#define BLYNK_TEMPLATE_ID        "TMPL2r6MI0Ptc"
 //#define BLYNK_TEMPLATE_NAME      "Automação Silo"
+//#define Slave_ID_EXT             32 // sensor 4x1
+
 #define BLYNK_TEMPLATE_ID        "TMPL2NIQXip7y"
 #define BLYNK_TEMPLATE_NAME      "Área de Teste"
+#define Slave_ID_EXT             1 // sensor CWT
 
 #define BLYNK_FIRMWARE_VERSION   "0.1.2"
 //#define BLYNK_PRINT Serial
@@ -234,13 +239,13 @@ unsigned int tempoAtivacao3 = 180; // é o tempo de espera em segundos após o c
 // ******************************************** //
 
 #include <ModbusMaster.h>
-ModbusMaster ExtSensor4x1;           // Sensor externo 4x1 (antigo node2) 
-ModbusMaster ExtSensorCWT;           // Sensor externo CWT
+ModbusMaster ExtSensor;           // Sensor externo 4x1 (antigo node2) 
+//ModbusMaster ExtSensorCWT;           // Sensor externo CWT
 
 // sensor MODBUS 4x1 - Slave ID 32
 // sensor MODBUS CWT - Slave ID 01
 int TempExt    = 0;    int UmiExt = 0; 
-int PresaoExt  = 0;    int LuxExt = 0;
+//int PresaoExt  = 0;    int LuxExt = 0;
  
 
 // ------ protótipo de funções ------
@@ -606,14 +611,14 @@ void MODBUS_Sensor(){
 
   // SENSOR EXTERNO CWT = ExtSensorCWT
   // SENSOR EXTERNO 4x1 = ExtSensor4x1
-  uint8_t result2 = ExtSensorCWT.readHoldingRegisters( 0, 2 );
-  Serial.print("\n"); Serial.println("Sensor Externo CWT ");
+  uint8_t result2 = ExtSensor.readHoldingRegisters( 0, 2 );
+  Serial.print("\n"); Serial.println("Sensor Externo ");
   Serial.print("Error = "); Serial.println( result2 );   // 0: ok, 226: falha
   Blynk.virtualWrite(V50, result2);                      // envia Status do Sensor MODBUS (0 = OK, 226 = falha)
   
-  if (result2 == ExtSensorCWT.ku8MBSuccess){
-    UmiExt    = (ExtSensorCWT.getResponseBuffer(0)/10);
-    TempExt   = (ExtSensorCWT.getResponseBuffer(1)/10);
+  if (result2 == ExtSensor.ku8MBSuccess){
+    UmiExt    = (ExtSensor.getResponseBuffer(0)/10);
+    TempExt   = (ExtSensor.getResponseBuffer(1)/10);
 
     Blynk.virtualWrite(V51, UmiExt);                     // Envia ao Blynk a informação do SENSOR EXTERNO 4x1
     Blynk.virtualWrite(V52, TempExt);
@@ -1116,8 +1121,8 @@ void setup(){
   PrintResetReason();                        // imprime na serial razao do ultimo reset
 
   Serial1.begin(9600, SERIAL_8N1, 14, 27);   // porta RS-485 do hardware KC-868-A6
-  ExtSensor4x1.begin  (32, Serial1);         // Slave address: 20H  Sensor 4x1
-  ExtSensorCWT.begin  ( 1, Serial1);         // Slave address: 01H  Sensor CWT-TH04
+  ExtSensor.begin  (Slave_ID_EXT, Serial1);         // Slave address: 20H  Sensor 4x1
+  //ExtSensorCWT.begin  ( 1, Serial1);         // Slave address: 01H  Sensor CWT-TH04
 
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C); // Address 0x3C (128x64)
   timerStart();                              // rotina de logomarca temporizada (minimo 10 segundos para RTC start)
