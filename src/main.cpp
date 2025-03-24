@@ -30,13 +30,13 @@
 // sensor MODBUS 4x1 - Slave ID 32
 // sensor MODBUS CWT - Slave ID 01
 
-//#define BLYNK_TEMPLATE_ID        "TMPL2r6MI0Ptc"
-//#define BLYNK_TEMPLATE_NAME      "Automação Silo"
-//#define Slave_ID_EXT             32 // sensor 4x1
+#define BLYNK_TEMPLATE_ID        "TMPL2r6MI0Ptc"
+#define BLYNK_TEMPLATE_NAME      "Automação Silo"
+#define Slave_ID_EXT             32 // sensor 4x1
 
-#define BLYNK_TEMPLATE_ID        "TMPL2NIQXip7y"
-#define BLYNK_TEMPLATE_NAME      "Área de Teste"
-#define Slave_ID_EXT             1 // sensor CWT
+//#define BLYNK_TEMPLATE_ID        "TMPL2NIQXip7y"
+//#define BLYNK_TEMPLATE_NAME      "Área de Teste"
+//#define Slave_ID_EXT             1 // sensor CWT
 
 #define BLYNK_FIRMWARE_VERSION   "0.1.2"
 //#define BLYNK_PRINT Serial
