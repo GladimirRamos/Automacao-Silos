@@ -38,7 +38,7 @@
 //#define BLYNK_TEMPLATE_NAME      "Área de Teste"
 //#define Slave_ID_EXT             1 // sensor CWT
 
-#define BLYNK_FIRMWARE_VERSION   "0.1.2"
+#define BLYNK_FIRMWARE_VERSION   "0.1.3"
 //#define BLYNK_PRINT Serial
 //#define BLYNK_DEBUG   
 //#define APP_DEBUG
@@ -68,36 +68,6 @@ int tempoStart  =     10; // tempo de espera em segundos para o inicio do sistem
 int timerON     =      0; // usado para mostrar só uma vez a cada reset a tela inicial no diplay com a logomarca
 int minAtualiza =      0; // usado para enviar dados ao servidor a cada 15 minutos, começa a enviar no minAtualiza
 int BotaoRESET;           // BotaoRESET = Virtual do APP
-
-// ----------------------------------- SETUP Watchdog e ResetReason ----------------------------------- 
-#include "soc/rtc_wdt.h"
-#define WDT_TIMEOUT   120000               // WDT miliseconds (max 120000 segundo manual Espressif)
-//#define Heartbeat_PIN 13                 // monitoração de "batimentos" para o watchdog de hardware
-
-//Converte esp_reset_reason para string
-const char *resetReasonName(esp_reset_reason_t r) {
-  switch (r) {
-    case ESP_RST_UNKNOWN:   return "UNKNOWN RESET";
-    case ESP_RST_POWERON:   return "POWER ON RESET";        //Power on or RST pin toggled
-    case ESP_RST_EXT:       return "EXTERN PIN RESET";      //External pin - not applicable for ESP32
-    case ESP_RST_SW:        return "SOFTWARE REBOOT";       //esp_restart()
-    case ESP_RST_PANIC:     return "CRASH RESET";           //Exception/panic
-    case ESP_RST_INT_WDT:   return "INTERRUPT WATCHDOG";    //Interrupt watchdog (software or hardware)
-    case ESP_RST_TASK_WDT:  return "TASK WATCHDOG";         //Task watchdog
-    case ESP_RST_WDT:       return "RTC WATCHDOG";          //Other watchdog (RTC)
-    case ESP_RST_DEEPSLEEP: return "SLEEP RESET";           //Reset after exiting deep sleep mode
-    case ESP_RST_BROWNOUT:  return "BROWNOUT RESET";        //Brownout reset (software or hardware)
-    case ESP_RST_SDIO:      return "RESET OVER SDIO";       //Reset over SDIO
-    default:                return "";
-  }
-}
-
-void PrintResetReason(void) {
-  esp_reset_reason_t r = esp_reset_reason();
-  //if (r == ESP_RST_POWERON) {delay(100);}                 // se habilitar espera o monitor serial inicializar
-  Serial.printf("Reset reason:     %i - %s\r\n\r\n", r, resetReasonName(r));
-}
-// -----------------------------------  Fim Watchdog e ResetReason ----------------------------------- 
 
 char monthString[25] = {"010203040506070809101112"};                // modelo 1
 int  monthIndex[122] = {0,2,4,8,10,12,14,16,17,18,20,22};
@@ -237,6 +207,47 @@ int setUmidade3;                  // busca valor da memória - Setup de umidade 
 unsigned int tempoAtivacao3 = 180; // é o tempo de espera em segundos após o comandos de ligar os motores 
 
 // ******************************************** //
+
+// ----------------------------------- SETUP Watchdog e ResetReason ----------------------------------- 
+#include "soc/rtc_wdt.h"
+#define WDT_TIMEOUT   120000               // WDT miliseconds (max 120000 segundo manual Espressif)
+//#define Heartbeat_PIN 13                 // monitoração de "batimentos" para o watchdog de hardware
+
+//Converte esp_reset_reason para string
+const char *resetReasonName(esp_reset_reason_t r) {
+  switch (r) {
+    case ESP_RST_UNKNOWN:   return "UNKNOWN RESET";
+    case ESP_RST_POWERON:   return "POWER ON RESET";        //Power on or RST pin toggled
+    case ESP_RST_EXT:       return "EXTERN PIN RESET";      //External pin - not applicable for ESP32
+    case ESP_RST_SW:        return "SOFTWARE REBOOT";       //esp_restart()
+    case ESP_RST_PANIC:     return "CRASH RESET";           //Exception/panic
+    case ESP_RST_INT_WDT:   return "INTERRUPT WATCHDOG";    //Interrupt watchdog (software or hardware)
+    case ESP_RST_TASK_WDT:  return "TASK WATCHDOG";         //Task watchdog
+    case ESP_RST_WDT:       return "RTC WATCHDOG";          //Other watchdog (RTC)
+    case ESP_RST_DEEPSLEEP: return "SLEEP RESET";           //Reset after exiting deep sleep mode
+    case ESP_RST_BROWNOUT:  return "BROWNOUT RESET";        //Brownout reset (software or hardware)
+    case ESP_RST_SDIO:      return "RESET OVER SDIO";       //Reset over SDIO
+    default:                return "";
+  }
+}
+
+void ResetReason(void) {
+  esp_reset_reason_t r = esp_reset_reason();
+  //if (r == ESP_RST_POWERON) {delay(100);}                 // se habilitar espera o monitor serial inicializar
+  Serial.printf("Reset reason:     %i - %s\r\n\r\n", r, resetReasonName(r));
+  // se reiniciar por POWER ON RESET vai iniciar o app em operacao no modo Manual
+  if (r == 1){
+    varModoOper1 = 0;
+    varModoOper2 = 0;
+    varModoOper3 = 0;
+    preferences.begin  ("my-app", false);                       // inicia 
+    preferences.putUInt("varModoOper1", varModoOper1);          // grava na NVS
+    preferences.putUInt("varModoOper2", varModoOper2);
+    preferences.putUInt("varModoOper3", varModoOper3);
+    preferences.end();
+    }
+}
+// -----------------------------------  Fim Watchdog e ResetReason ----------------------------------- 
 
 #include <ModbusMaster.h>
 ModbusMaster ExtSensor;           // Sensor externo 4x1 (antigo node2) 
@@ -635,8 +646,14 @@ void sendLogReset(){
     esp_reset_reason_t r = esp_reset_reason();
     Serial.printf("\r\nReset reason %i - %s\r\n", r, resetReasonName(r));
     Blynk.virtualWrite(V45, currentDay, "/", currentMonth, " ", currentHour, ":", currentMin, "",resetReasonName(r), " ",counterRST);
-    Blynk.virtualWrite(V53, counterRST); // envia para tela do app
-    Blynk.syncVirtual (V40, V49);        // sincroniza datastream agendamento e modo de operação
+    Blynk.virtualWrite(V53, counterRST);      // envia para tela do app
+    Blynk.syncVirtual (V40, V69, V89);        // sincroniza datastream de agendamentos
+    delay(500);
+    // se reiniciar por (1) POWER ON RESET
+    if (r == 1){
+      //Blynk.logEvent("falha_de_energia", String("Teste - Falha de Energia!"));
+      Blynk.logEvent("falha_de_energia");}     // registra o evento falha_de_energia no servidor
+
     sendBlynk = false;
   }
 }
@@ -1073,6 +1090,9 @@ void setup(){
   
   preferences.end();                                   // finaliza o uso da memória NVS  
   delay(50);
+
+  ResetReason();                                       // imprime na serial razao do ultimo reset e
+                                                       // se iniciar por (1) POWER ON RESET coloca o app em modo manual
   Serial.printf("Quantidade de RESETs: %u\n", counterRST);
 
   Serial.printf("Umidade ajustada para o acionamento do Silo 1: %u\n", setUmidade1);
@@ -1118,7 +1138,7 @@ void setup(){
                      }
         */
 
-  PrintResetReason();                        // imprime na serial razao do ultimo reset
+  
 
   Serial1.begin(9600, SERIAL_8N1, 14, 27);   // porta RS-485 do hardware KC-868-A6
   ExtSensor.begin  (Slave_ID_EXT, Serial1);         // Slave address: 20H  Sensor 4x1
@@ -1165,9 +1185,20 @@ void setup(){
 // ----------------------------- temporizador para ler os botoes do app --------------------------------------
 void timerButtonAPP(){                        // timer de botao pressionado no app
 
-  if (rearme == 1){                           // recebido do V55
+  if (rearme == 1){                           // recebido do V55 - botao no app de reset do quadro
+      // coloca o app em modo AUTO
+      varModoOper1 = 2;
+      varModoOper2 = 2;
+      varModoOper3 = 2;
+      preferences.begin  ("my-app", false);                       // inicia 
+      preferences.putUInt("varModoOper1", varModoOper1);          // grava na NVS
+      preferences.putUInt("varModoOper2", varModoOper2);
+      preferences.putUInt("varModoOper3", varModoOper3);
+      preferences.end();
+      delay(50);
       Serial.println("Recebido o comando rearme do quadro!");
       Blynk.virtualWrite(V45, currentDay, "/", currentMonth, " ", currentHour, ":", currentMin, " Comando REARME do Quadro Geral");
+      
       digitalWrite(rearme_PIN, HIGH);
       delay(2000);
       } else {
