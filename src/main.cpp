@@ -335,11 +335,10 @@ void Main2(){
   display.setTextSize(1); 
   display.setCursor(0, 57);                   // coluna, linha 68, 57 sem rssi (44,57);
 
-  // mostra no display: Setup de Umidade somente do Silo 1
-  display.print("SET:");
-  display.print(setUmidade1);                  // umidade ajustada para comando automático
+  display.print("U:");
+  display.print(UmiExt);        // umidade externa
+  display.print('%');
   display.print(" ");
-
   display.print(rssi);
   display.print(" ");
 
@@ -376,15 +375,32 @@ void Main2(){
   display.print(StrStateBlynk);
   Serial.print("Status Blynk Service:   "); Serial.println(StrStateBlynk);  
 
-  display.setCursor(1,22);     // coluna, linha 
-  display.print("UMIDADE");
-  // mostra no display: Timer contador de ativação somente do Silo 1
-  display.setCursor(1,1);      // coluna, linha  110,4   1,7
-  display.print("T:");
+  display.setCursor(0,22);                     // coluna, linha 
+  display.print("Silo 1:");
+  display.print(setUmidade1);                  // umidade ajustada para comando automático
+  display.print("  T:");
   display.print(timer_Motor1);    
+  display.print(" ");
+  display.println(StrModo_S1);
+
+  display.setCursor(0,32);  
+  display.print("Silo 2:");
+  display.print(setUmidade2);        
+  display.print("  T:");
+  display.print(timer_Motor2);    
+  display.print(" ");
+  display.println(StrModo_S2);
+
+  display.setCursor(0,42);  
+  display.print("Silo 3:");
+  display.print(setUmidade3);   
+  display.print("  T:");
+  display.print(timer_Motor3);    
+  display.print(" ");
+  display.println(StrModo_S3);
 
   // mostra hora:minutos:segundos no display
-  display.setCursor(32,1);     // (15,0) 
+  display.setCursor(15,0);                 //(32,1);
   display.setTextSize(2);
   if(currentHour < 10){
     display.print(' ');
@@ -400,24 +416,7 @@ void Main2(){
     display.print('0');
     display.print(currentSec);
     } else {display.print(currentSec);}
-
-  //Serial.print("Temperatura do Hardware: ");
-  //int temp = ((temprature_sens_read() - 32) / 1.8) - 28; // busca info de temperatura e ajusta se necessario para mostrar 
-  //Serial.print(temp);
-  //Serial.println(" C");
-  
-  display.setCursor(4, 34);     // coluna, linha  (0, 50);
-  display.print(UmiExt);        // umidade externa
-  display.print('%');
-  display.println();   
-
-  display.setCursor(55, 28);
-  display.println(StrModo_S1);  // mostra o modo de operacao do Silo 1 _S1
   display.display();            // mostra na tela
-
-  //Serial.print("Quantidade de reset's:   ");
-  //Serial.println(counterRST);
-  //Blynk.virtualWrite(V53, counterRST);
 
 // *************************************************** //
 //            Loop de verificações do Silo 1
