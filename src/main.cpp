@@ -38,7 +38,7 @@
 //#define BLYNK_TEMPLATE_NAME      "Área de Teste"
 //#define Slave_ID_EXT             1 // sensor CWT
 
-#define BLYNK_FIRMWARE_VERSION   "0.1.3"
+#define BLYNK_FIRMWARE_VERSION   "0.1.4"
 //#define BLYNK_PRINT Serial
 //#define BLYNK_DEBUG   
 //#define APP_DEBUG
@@ -645,14 +645,14 @@ void sendLogReset(){
     esp_reset_reason_t r = esp_reset_reason();
     Serial.printf("\r\nReset reason %i - %s\r\n", r, resetReasonName(r));
     Blynk.virtualWrite(V45, currentDay, "/", currentMonth, " ", currentHour, ":", currentMin, "",resetReasonName(r), " ",counterRST);
-    Blynk.virtualWrite(V53, counterRST);      // envia para tela do app
-    Blynk.syncVirtual (V40, V69, V89);        // sincroniza datastream de agendamentos
+    Blynk.virtualWrite(V53, counterRST);                        // envia para tela do app
+    Blynk.syncVirtual (V40, V69, V89);                          // sincroniza datastream de agendamentos
     delay(500);
     // se reiniciar por (1) POWER ON RESET
     if (r == 1){
       //Blynk.logEvent("falha_de_energia", String("Teste - Falha de Energia!"));
-      Blynk.logEvent("falha_de_energia");}     // registra o evento falha_de_energia no servidor
-
+      Blynk.logEvent("falha_de_energia");                 // registra o evento falha_de_energia no servidor
+      }
     sendBlynk = false;
   }
 }
@@ -1508,7 +1508,7 @@ void ComandoOutput() {
        
        timer_Motor1 = timer_Motor1+1;                    // contador incrementa a cada execução usado com timer dos motores
        if (timer_Motor1 >= tempoAtivacao1){              // se passou XX segundos
-          Blynk.virtualWrite(V45, currentDay, "/", currentMonth, " ", currentHour, ":", currentMin," Silo 1 - Cmd ligar pelo app");
+          //Blynk.virtualWrite(V45, currentDay, "/", currentMonth, " ", currentHour, ":", currentMin," Silo 1 - Cmd ligar pelo app");
           // Liga Silo 1 = pulsa a saida 1
           output_PLC = output_PLC & 0b11111110;          // faz AND, onde apenas bits 0 = 0
           Wire.beginTransmission(0x24);                  // escreve na saida do PLC
@@ -1527,7 +1527,7 @@ void ComandoOutput() {
     }
 
     if (forcaDESLiga1 == 1){ 
-          Blynk.virtualWrite(V45, currentDay, "/", currentMonth, " ", currentHour, ":", currentMin," Silo 1 - Cmd desligar pelo app"); 
+          //Blynk.virtualWrite(V45, currentDay, "/", currentMonth, " ", currentHour, ":", currentMin," Silo 1 - Cmd desligar pelo app"); 
           // Desliga Silo 1 = pulsa a saida 2
           output_PLC = output_PLC & 0b11111101;         // faz AND, onde apenas bits 0 = 0
           Wire.beginTransmission(0x24);                 // escreve na saida do PLC
@@ -1548,7 +1548,7 @@ void ComandoOutput() {
    case 1:                                              // 1 = esta no modo de controle via agendamento
     if ((currentSecDAY >= HoraOn_PGMMem1) && (currentSecDAY <= HoraOff_PGMMem1) && WdayON1 >= 0) {
       for (cicloOFF_1; cicloOFF_1 < 1; cicloOFF_1++) {   
-          Blynk.virtualWrite(V45, currentDay, "/", currentMonth, " ", currentHour, ":", currentMin," Silo 1 - Cmd desligar por Agenda");                
+          //Blynk.virtualWrite(V45, currentDay, "/", currentMonth, " ", currentHour, ":", currentMin," Silo 1 - Cmd desligar por Agenda");                
           // Desliga Silo 1 = pulsa a saida 2
           output_PLC = output_PLC & 0b11111101;         // faz AND, onde apenas bits 0 = 0
           Wire.beginTransmission(0x24);                 // escreve na saida do PLC
@@ -1572,7 +1572,7 @@ void ComandoOutput() {
              timer_Motor1 = timer_Motor1+1;             // contador incrementa a cada execução usado com timer dos motores
              if (timer_Motor1 >= tempoAtivacao1){       // se passou XX segundos
               for (cicloON_1; cicloON_1 < 1; cicloON_1++) {
-              Blynk.virtualWrite(V45, currentDay, "/", currentMonth, " ", currentHour, ":", currentMin," Silo 1 - Cmd ligar por Agenda");
+              //Blynk.virtualWrite(V45, currentDay, "/", currentMonth, " ", currentHour, ":", currentMin," Silo 1 - Cmd ligar por Agenda");
               // Liga Silo 1 = pulsa a saida 1
               output_PLC = output_PLC & 0b11111110;     // faz AND, onde apenas bits 0 = 0
               Wire.beginTransmission(0x24);             // escreve na saida do PLC
@@ -1599,7 +1599,7 @@ void ComandoOutput() {
     timer_Motor1 = timer_Motor1+1;                      // contador incrementa a cada execução usado com timer dos motores
     if (timer_Motor1 >= tempoAtivacao1){                // se passou XX segundos
      for (cicloON_1; cicloON_1 < 1; cicloON_1++) {
-      Blynk.virtualWrite(V45, currentDay, "/", currentMonth, " ", currentHour, ":", currentMin," Silo 1 - Cmd ligar Auto");
+      //Blynk.virtualWrite(V45, currentDay, "/", currentMonth, " ", currentHour, ":", currentMin," Silo 1 - Cmd ligar Auto");
        // Liga Silo 1 = pulsa a saida 1
        output_PLC = output_PLC & 0b11111110;            // faz AND, onde apenas bits 0 = 0
        Wire.beginTransmission(0x24);                    // escreve na saida do PLC
@@ -1617,7 +1617,7 @@ void ComandoOutput() {
      }
     } else if ((UmiExt -2) > setUmidade1) {             // enquanto umidade maior executa desliga
         for (cicloOFF_1; cicloOFF_1 < 1; cicloOFF_1++) {    
-        Blynk.virtualWrite(V45, currentDay, "/", currentMonth, " ", currentHour, ":", currentMin," Silo 1 - Cmd desligar Auto");              
+        //Blynk.virtualWrite(V45, currentDay, "/", currentMonth, " ", currentHour, ":", currentMin," Silo 1 - Cmd desligar Auto");              
         // Desliga Silo 1 = pulsa a saida 2
         output_PLC = output_PLC & 0b11111101;           // faz AND, onde apenas bits 0 = 0
         Wire.beginTransmission(0x24);                   // escreve na saida do PLC
@@ -1654,7 +1654,7 @@ if (timer_Motor2 > tempoAtivacao2){
       
       timer_Motor2 = timer_Motor2+1;                    // contador incrementa a cada execução usado com timer dos motores
       if (timer_Motor2 >= tempoAtivacao2){              // se passou XX segundos
-         Blynk.virtualWrite(V45, currentDay, "/", currentMonth, " ", currentHour, ":", currentMin," Silo 2 - Cmd ligar pelo app");
+         //Blynk.virtualWrite(V45, currentDay, "/", currentMonth, " ", currentHour, ":", currentMin," Silo 2 - Cmd ligar pelo app");
          // Liga Silo 2 = pulsa a saida 3
          output_PLC = output_PLC & 0b11111011;          // faz AND, onde apenas bits 0 = 0
          Wire.beginTransmission(0x24);                  // escreve na saida do PLC
@@ -1673,7 +1673,7 @@ if (timer_Motor2 > tempoAtivacao2){
    }
 
    if (forcaDESLiga2 == 1){ 
-         Blynk.virtualWrite(V45, currentDay, "/", currentMonth, " ", currentHour, ":", currentMin," Silo 2 - Cmd desligar pelo app"); 
+         //Blynk.virtualWrite(V45, currentDay, "/", currentMonth, " ", currentHour, ":", currentMin," Silo 2 - Cmd desligar pelo app"); 
          // Desliga Silo 2 = pulsa a saida 4
          output_PLC = output_PLC & 0b11110111;         // faz AND, onde apenas bits 0 = 0
          Wire.beginTransmission(0x24);                 // escreve na saida do PLC
@@ -1694,7 +1694,7 @@ if (timer_Motor2 > tempoAtivacao2){
   case 1:                                              // 1 = esta no modo de controle via agendamento
    if ((currentSecDAY >= HoraOn_PGMMem2) && (currentSecDAY <= HoraOff_PGMMem2) && WdayON2 >= 0) {
      for (cicloOFF_2; cicloOFF_2 < 1; cicloOFF_2++) {   
-         Blynk.virtualWrite(V45, currentDay, "/", currentMonth, " ", currentHour, ":", currentMin," Silo 2 - Cmd desligar por Agenda");                
+         //Blynk.virtualWrite(V45, currentDay, "/", currentMonth, " ", currentHour, ":", currentMin," Silo 2 - Cmd desligar por Agenda");                
          // Desliga Silo 2 = pulsa a saida 4
          output_PLC = output_PLC & 0b11110111;         // faz AND, onde apenas bits 0 = 0
          Wire.beginTransmission(0x24);                 // escreve na saida do PLC
@@ -1718,7 +1718,7 @@ if (timer_Motor2 > tempoAtivacao2){
             timer_Motor2 = timer_Motor2+1;             // contador incrementa a cada execução usado com timer dos motores
             if (timer_Motor2 >= tempoAtivacao2){       // se passou XX segundos
              for (cicloON_2; cicloON_2 < 1; cicloON_2++) {
-             Blynk.virtualWrite(V45, currentDay, "/", currentMonth, " ", currentHour, ":", currentMin," Silo 2 - Cmd ligar por Agenda");
+             //Blynk.virtualWrite(V45, currentDay, "/", currentMonth, " ", currentHour, ":", currentMin," Silo 2 - Cmd ligar por Agenda");
              // Liga Silo 2 = pulsa a saida 3
              output_PLC = output_PLC & 0b11111011;     // faz AND, onde apenas bits 0 = 0
              Wire.beginTransmission(0x24);             // escreve na saida do PLC
@@ -1745,7 +1745,7 @@ if (timer_Motor2 > tempoAtivacao2){
    timer_Motor2 = timer_Motor2+1;                      // contador incrementa a cada execução usado com timer dos motores
    if (timer_Motor2 >= tempoAtivacao2){                // se passou XX segundos
     for (cicloON_2; cicloON_2 < 1; cicloON_2++) {
-     Blynk.virtualWrite(V45, currentDay, "/", currentMonth, " ", currentHour, ":", currentMin," Silo 2 - Cmd ligar Auto");
+     //Blynk.virtualWrite(V45, currentDay, "/", currentMonth, " ", currentHour, ":", currentMin," Silo 2 - Cmd ligar Auto");
       // Liga Silo 2 = pulsa a saida 3
       output_PLC = output_PLC & 0b11111011;            // faz AND, onde apenas bits 0 = 0
       Wire.beginTransmission(0x24);                    // escreve na saida do PLC
@@ -1763,7 +1763,7 @@ if (timer_Motor2 > tempoAtivacao2){
     }
    } else if ((UmiExt -2) > setUmidade2) {             // enquanto umidade maior executa desliga
        for (cicloOFF_2; cicloOFF_2 < 1; cicloOFF_2++) {    
-       Blynk.virtualWrite(V45, currentDay, "/", currentMonth, " ", currentHour, ":", currentMin," Silo 2 - Cmd desligar Auto");              
+       //Blynk.virtualWrite(V45, currentDay, "/", currentMonth, " ", currentHour, ":", currentMin," Silo 2 - Cmd desligar Auto");              
        // Desliga Silo 2 = pulsa a saida 4
        output_PLC = output_PLC & 0b11110111;           // faz AND, onde apenas bits 0 = 0
        Wire.beginTransmission(0x24);                   // escreve na saida do PLC
@@ -1800,7 +1800,7 @@ if (timer_Motor3 > tempoAtivacao3){
       
       timer_Motor3 = timer_Motor3+1;                    // contador incrementa a cada execução usado com timer dos motores
       if (timer_Motor3 >= tempoAtivacao3){              // se passou XX segundos
-         Blynk.virtualWrite(V45, currentDay, "/", currentMonth, " ", currentHour, ":", currentMin," Silo 3 - Cmd ligar pelo app");
+         //Blynk.virtualWrite(V45, currentDay, "/", currentMonth, " ", currentHour, ":", currentMin," Silo 3 - Cmd ligar pelo app");
          // Liga Silo 1 = pulsa a saida 5
          output_PLC = output_PLC & 0b11101111;          // faz AND, onde apenas bits 0 = 0
          Wire.beginTransmission(0x24);                  // escreve na saida do PLC
@@ -1819,7 +1819,7 @@ if (timer_Motor3 > tempoAtivacao3){
    }
 
    if (forcaDESLiga3 == 1){ 
-         Blynk.virtualWrite(V45, currentDay, "/", currentMonth, " ", currentHour, ":", currentMin," Silo 3 - Cmd desligar pelo app"); 
+         //Blynk.virtualWrite(V45, currentDay, "/", currentMonth, " ", currentHour, ":", currentMin," Silo 3 - Cmd desligar pelo app"); 
          // Desliga Silo 6 = pulsa a saida 6
          output_PLC = output_PLC & 0b11011111;         // faz AND, onde apenas bits 0 = 0
          Wire.beginTransmission(0x24);                 // escreve na saida do PLC
@@ -1840,7 +1840,7 @@ if (timer_Motor3 > tempoAtivacao3){
   case 1:                                              // 1 = esta no modo de controle via agendamento
    if ((currentSecDAY >= HoraOn_PGMMem3) && (currentSecDAY <= HoraOff_PGMMem3) && WdayON3 >= 0) {
      for (cicloOFF_3; cicloOFF_3 < 1; cicloOFF_3++) {   
-         Blynk.virtualWrite(V45, currentDay, "/", currentMonth, " ", currentHour, ":", currentMin," Silo 3 - Cmd desligar por Agenda");                
+         //Blynk.virtualWrite(V45, currentDay, "/", currentMonth, " ", currentHour, ":", currentMin," Silo 3 - Cmd desligar por Agenda");                
          // Desliga Silo 3 = pulsa a saida 6
          output_PLC = output_PLC & 0b11011111;         // faz AND, onde apenas bits 0 = 0
          Wire.beginTransmission(0x24);                 // escreve na saida do PLC
@@ -1864,7 +1864,7 @@ if (timer_Motor3 > tempoAtivacao3){
             timer_Motor3 = timer_Motor3+1;             // contador incrementa a cada execução usado com timer dos motores
             if (timer_Motor3 >= tempoAtivacao3){       // se passou XX segundos
              for (cicloON_3; cicloON_3 < 1; cicloON_3++) {
-             Blynk.virtualWrite(V45, currentDay, "/", currentMonth, " ", currentHour, ":", currentMin," Silo 3 - Cmd ligar por Agenda");
+             //Blynk.virtualWrite(V45, currentDay, "/", currentMonth, " ", currentHour, ":", currentMin," Silo 3 - Cmd ligar por Agenda");
              // Liga Silo 3 = pulsa a saida 5
              output_PLC = output_PLC & 0b11101111;     // faz AND, onde apenas bits 0 = 0
              Wire.beginTransmission(0x24);             // escreve na saida do PLC
@@ -1891,7 +1891,7 @@ if (timer_Motor3 > tempoAtivacao3){
    timer_Motor3 = timer_Motor3+1;                      // contador incrementa a cada execução usado com timer dos motores
    if (timer_Motor3 >= tempoAtivacao3){                // se passou XX segundos
     for (cicloON_3; cicloON_3 < 1; cicloON_3++) {
-     Blynk.virtualWrite(V45, currentDay, "/", currentMonth, " ", currentHour, ":", currentMin," Silo 3 - Cmd ligar Auto");
+     //Blynk.virtualWrite(V45, currentDay, "/", currentMonth, " ", currentHour, ":", currentMin," Silo 3 - Cmd ligar Auto");
       // Liga Silo 3 = pulsa a saida 5
       output_PLC = output_PLC & 0b11101111;            // faz AND, onde apenas bits 0 = 0
       Wire.beginTransmission(0x24);                    // escreve na saida do PLC
@@ -1909,7 +1909,7 @@ if (timer_Motor3 > tempoAtivacao3){
     }
    } else if ((UmiExt -2) > setUmidade3) {             // enquanto umidade maior executa desliga
        for (cicloOFF_3; cicloOFF_3 < 1; cicloOFF_3++) {    
-       Blynk.virtualWrite(V45, currentDay, "/", currentMonth, " ", currentHour, ":", currentMin," Silo 3 - Cmd desligar Auto");              
+       //Blynk.virtualWrite(V45, currentDay, "/", currentMonth, " ", currentHour, ":", currentMin," Silo 3 - Cmd desligar Auto");              
        // Desliga Silo 3 = pulsa a saida 6
        output_PLC = output_PLC & 0b11011111;           // faz AND, onde apenas bits 0 = 0
        Wire.beginTransmission(0x24);                   // escreve na saida do PLC
