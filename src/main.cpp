@@ -38,7 +38,7 @@
 //#define BLYNK_TEMPLATE_NAME      "Área de Teste"
 //#define Slave_ID_EXT             1 // sensor CWT
 
-#define BLYNK_FIRMWARE_VERSION   "0.1.4"
+#define BLYNK_FIRMWARE_VERSION   "0.1.5"
 //#define BLYNK_PRINT Serial
 //#define BLYNK_DEBUG   
 //#define APP_DEBUG
@@ -425,7 +425,7 @@ void Main2(){
   // ------    Verifica Modo de Operação - Local ou Via celular - Remoto ou Agenda   ------
   Serial.println("===============  SILO 1 ===============");
   Serial.print("Operação em modo:      ");
-  if (modoOper_1 == false){                // Lê IN-2 > || B11111101
+  if (modoOper_1 == false){                  // Lê IN-2 > || B11111101
       Serial.println("Via aplicativo");
       //Blynk.virtualWrite(V48, 0);          // Envia ao Blynk informação - Modo Remoto
       Serial.print("Comando de saída via : ");
@@ -433,12 +433,14 @@ void Main2(){
       switch (varModoOper1){
           case 0: Serial.println("MANUAL APP");      Blynk.virtualWrite(V49, 0); StrModo_S1="MANUAL"; break;  
           case 1: Serial.println("Agendamento APP"); Blynk.virtualWrite(V49, 1); StrModo_S1="AGENDA"; break; 
-          case 2: Serial.println("AUTOMATICO  APP"); Blynk.virtualWrite(V49, 2); StrModo_S1="AUTO"  ; break;} 
+          case 2: Serial.println("AUTOMATICO  APP"); Blynk.virtualWrite(V49, 2); StrModo_S1="AUTO"  ; break;
+          }
       } else {
       StrModo_S1="LOCAL";
       Serial.println(StrModo_S1);               
       //Blynk.virtualWrite(V48, 1);          // Envia ao Blynk informação - Modo Local
       Blynk.virtualWrite(V49, 3);            // sinalização no app inetrruptor segmentado
+      timer_Motor1 = 1;                      // faz o led no app ficar apagado conforme estado do motor
       }
   // se mudou o modo de operacao envia ao Blynk
   if (StrModo_S1 != old_StrModo_S1){
@@ -449,11 +451,13 @@ void Main2(){
   if (statusMotor1){                              // vem do IN-1
       Serial.println("DESLIGADO");              
       Blynk.virtualWrite(V44, 0);                 // Envia ao Blynk informação - Motor OFF
+      cicloON_1 = 0;                              // habilita os pulsos de on motor
       //Blynk.virtualWrite(V43, "MOTOR DESLIGADO");
       } else {
         Serial.println("LIGADO");
         //Blynk.setProperty(V44, "color", "#EB4E45"); // verde "#00FF6E"           
         Blynk.virtualWrite(V44, 1);               // Envia ao Blynk informação - Motor ON
+        cicloOFF_1 = 0;                           // habilita os pulsos de off motor
         //Blynk.virtualWrite(V43, "MOTOR LIGADO");
       }
   //  se o estado de funcionamento do motor mudou grava na memória
@@ -480,7 +484,7 @@ void Main2(){
   // ------    Verifica Modo de Operação - Local ou Via celular - Remoto ou Agenda   ------
   Serial.println("===============  SILO 2 ===============");
   Serial.print("Operação em modo:      ");
-  if (modoOper_2 == false){                // Lê IN-4
+  if (modoOper_2 == false){                  // Lê IN-4
       Serial.println("Via aplicativo");
       //Blynk.virtualWrite(V68, 0);          // Envia ao Blynk informação - Modo Remoto
       Serial.print("Comando de saída via : ");
@@ -488,12 +492,14 @@ void Main2(){
       switch (varModoOper2){
           case 0: Serial.println("MANUAL APP");      Blynk.virtualWrite(V60, 0); StrModo_S2="MANUAL"; break;  
           case 1: Serial.println("Agendamento APP"); Blynk.virtualWrite(V60, 1); StrModo_S2="AGENDA"; break; 
-          case 2: Serial.println("AUTOMATICO  APP"); Blynk.virtualWrite(V60, 2); StrModo_S2="AUTO"  ; break;} 
+          case 2: Serial.println("AUTOMATICO  APP"); Blynk.virtualWrite(V60, 2); StrModo_S2="AUTO"  ; break;
+          } 
       } else {
       StrModo_S2="LOCAL";
       Serial.println(StrModo_S2);               
       //Blynk.virtualWrite(V68, 1);          // Envia ao Blynk informação - Modo Local
-      Blynk.virtualWrite(V60, 3);          // sinalização no app interruptor segmentado
+      Blynk.virtualWrite(V60, 3);            // sinalização no app interruptor segmentado
+      timer_Motor2 = 1;
       }
   // se mudou o modo de operacao envia ao Blynk
   if (StrModo_S2 != old_StrModo_S2){
@@ -504,10 +510,12 @@ void Main2(){
   if (statusMotor2){                              // vem do IN-3
       Serial.println("DESLIGADO");              
       Blynk.virtualWrite(V72, 0);                 // Envia ao Blynk informação - Motor OFF
+      cicloON_2 = 0;                              // habilita os pulsos de on motor
       //Blynk.virtualWrite(V64, "MOTOR DESLIGADO");
       } else {
         Serial.println("LIGADO");               
         Blynk.virtualWrite(V72, 1);               // Envia ao Blynk informação - Motor ON
+        cicloOFF_2 = 0;                           // habilita os pulsos de off motor
         //Blynk.virtualWrite(V64, "MOTOR LIGADO");
       }
   //  se o estado de funcionamento do motor mudou grava na memória
@@ -534,7 +542,7 @@ void Main2(){
   // ------    Verifica Modo de Operação - Local ou Via celular - Remoto ou Agenda   ------
   Serial.println("===============  SILO 3 ===============");
   Serial.print("Operação em modo:      ");
-  if (modoOper_3 == false){                // Lê IN-6 
+  if (modoOper_3 == false){                  // Lê IN-6 
       Serial.println("Via aplicativo");
       //Blynk.virtualWrite(V88, 0);          // Envia ao Blynk informação - Modo Remoto
       Serial.print("Comando de saída via : ");
@@ -542,12 +550,14 @@ void Main2(){
       switch (varModoOper3){
           case 0: Serial.println("MANUAL APP");      Blynk.virtualWrite(V80, 0); StrModo_S3="MANUAL"; break;  
           case 1: Serial.println("Agendamento APP"); Blynk.virtualWrite(V80, 1); StrModo_S3="AGENDA"; break; 
-          case 2: Serial.println("AUTOMATICO  APP"); Blynk.virtualWrite(V80, 2); StrModo_S3="AUTO"  ; break;} 
+          case 2: Serial.println("AUTOMATICO  APP"); Blynk.virtualWrite(V80, 2); StrModo_S3="AUTO"  ; break;
+          } 
       } else {
       StrModo_S3="LOCAL";
       Serial.println(StrModo_S3);               
       //Blynk.virtualWrite(V88, 1);          // Envia ao Blynk informação - Modo Local
-      Blynk.virtualWrite(V80, 3);          // sinalização no app interruptor segmentado
+      Blynk.virtualWrite(V80, 3);            // sinalização no app interruptor segmentado
+      timer_Motor3 = 1;
       }
   // se mudou o modo de operacao envia ao Blynk
   if (StrModo_S3 != old_StrModo_S3){
@@ -558,10 +568,12 @@ void Main2(){
   if (statusMotor3){                              // vem do IN-5
       Serial.println("DESLIGADO");              
       Blynk.virtualWrite(V92, 0);                 // Envia ao Blynk informação - Motor OFF
+      cicloON_3 = 0;                              // habilita os pulsos de on motor
       //Blynk.virtualWrite(V84, "MOTOR DESLIGADO");
       } else {
         Serial.println("LIGADO");               
         Blynk.virtualWrite(V92, 1);               // Envia ao Blynk informação - Motor ON
+        cicloOFF_3 = 0;                           // habilita os pulsos de off motor
         //Blynk.virtualWrite(V84, "MOTOR LIGADO");
       }
   //  se o estado de funcionamento do motor mudou grava na memória
@@ -639,9 +651,9 @@ void MODBUS_Sensor(){
 }
 
 void sendLogReset(){
-  // envia razao do reset para o servidor
+  // envia razao do reset para o monitor serial e servidor
   if ((servicoIoTState==4) && (sendBlynk)){
-    Serial.print("               BLYNK:  RODANDO COM SUCESSO!"); // delay(100);
+    Serial.print("               BLYNK:  RODANDO COM SUCESSO!");
     esp_reset_reason_t r = esp_reset_reason();
     Serial.printf("\r\nReset reason %i - %s\r\n", r, resetReasonName(r));
     Blynk.virtualWrite(V45, currentDay, "/", currentMonth, " ", currentHour, ":", currentMin, "",resetReasonName(r), " ",counterRST);
@@ -650,10 +662,13 @@ void sendLogReset(){
     delay(500);
     // se reiniciar por (1) POWER ON RESET
     if (r == 1){
+      Blynk.virtualWrite(V2, 255);                        // envia 1 para sinalização push no app via automação
+      delay(3000);
+      Blynk.virtualWrite(V2, 0);                          // envia 0 para "des_sinalizar" na automação
       //Blynk.logEvent("falha_de_energia", String("Teste - Falha de Energia!"));
       Blynk.logEvent("falha_de_energia");                 // registra o evento falha_de_energia no servidor
       }
-    sendBlynk = false;
+    sendBlynk = false;                                    // garante que só envia uma vez essas informações
   }
 }
 
@@ -1565,7 +1580,7 @@ void ComandoOutput() {
           cicloON_1 = 0;                                // habilita executar uma vez o comando 
           }
 
-    } else if (oldStatusMotor1){                        // enquanto o motor estiver desligado executa
+    } else if (statusMotor1){                        // enquanto o motor estiver desligado executa
              Blynk.virtualWrite(V44, (timer_Motor1 % 2 == 0));     // pisca led V44 status do motor, terminar em número par!
              //Blynk.virtualWrite(V45, currentDay, "/", currentMonth, " ", currentHour, ":", currentMin, " -", timer_Motor1," Temporizando em Agenda");
              
@@ -1592,7 +1607,7 @@ void ComandoOutput() {
    break;
     
    case 2: 
-   if (UmiExt <= setUmidade1 && oldStatusMotor1){       // enquanto umidade menor ou igual e motor off executa
+   if (UmiExt <= setUmidade1 && statusMotor1){       // enquanto umidade menor ou igual e motor off executa
     Blynk.virtualWrite(V44, (timer_Motor1 % 2 == 0));   // pisca led V44 status do motor, terminar em número par!
     //Blynk.virtualWrite(V45, currentDay, "/", currentMonth, " ", currentHour, ":", currentMin, " -", timer_Motor1," Temporizando em AUTO");
     
