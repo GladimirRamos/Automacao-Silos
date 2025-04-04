@@ -38,7 +38,7 @@
 //#define BLYNK_TEMPLATE_NAME      "Área de Teste"
 //#define Slave_ID_EXT             1 // sensor CWT
 
-#define BLYNK_FIRMWARE_VERSION   "0.1.5"
+#define BLYNK_FIRMWARE_VERSION   "0.1.6"
 //#define BLYNK_PRINT Serial
 //#define BLYNK_DEBUG   
 //#define APP_DEBUG
@@ -126,8 +126,8 @@ int HoraDESLigaPGM1;
 String DiaSemPGM1;
 int WdayON1;
 // vinculo com app
-int forcaLiga1;
-int forcaDESLiga1;
+int forcaLiga1 = 0;
+int forcaDESLiga1 = 0;
 // uso geral
 int varModoOper1;
 int cicloON_1 = 0;                // usado na rotina de acionamentos por agendamento
@@ -160,8 +160,8 @@ int HoraDESLigaPGM2;
 String DiaSemPGM2;
 int WdayON2;
 // vinculo com app
-int forcaLiga2;
-int forcaDESLiga2;
+int forcaLiga2 = 0;
+int forcaDESLiga2 = 0;
 // uso geral
 int varModoOper2;
 int cicloON_2 = 0;                // usado na rotina de acionamentos por agendamento
@@ -194,8 +194,8 @@ int HoraDESLigaPGM3;
 String DiaSemPGM3;
 int WdayON3;
 // vinculo com app
-int forcaLiga3;
-int forcaDESLiga3;
+int forcaLiga3 = 0;
+int forcaDESLiga3 = 0;
 // uso geral
 int varModoOper3;
 int cicloON_3 = 0;                // usado na rotina de acionamentos por agendamento
@@ -1222,20 +1222,23 @@ void timerButtonAPP(){                        // timer de botao pressionado no a
  // *************************************************************************** //
  //            Interações do temporizador de botoes do APP e Silo 1
  // *************************************************************************** //
-  if (remoteLiga1 == 1){
-      //forcaDESLiga1 = 0;
-      forcaLiga1 = remoteLiga1;
+  if (remoteLiga1 == 1 && varModoOper1 == 0){                     // se apertar o botao ON e estiver em Manual
+      forcaDESLiga1 = 0;
+      forcaLiga1 = remoteLiga1;                                   // permite o pulso no relé ON
       Serial.println("Silo 1 - Comando remoto forca LIGAR executado!");
       }
 
-  if (remoteDESLiga1 == 1){
-      //forcaLiga1 = 0;
-      forcaDESLiga1 = remoteDESLiga1;
+  if (remoteDESLiga1 == 1 && varModoOper1 == 0){                  // se apertar o botao OFF e estiver em Manual
+      forcaLiga1 = 0;
+      forcaDESLiga1 = remoteDESLiga1;                             // permite o pulso no relé OFF
       Serial.println("Silo 1 - Comando remoto forca DESLIGAR excutado!");
       }
 
   if (remoteManual1 == 1){                                        // seta varModoOper1 em modo Manual (0)
-      varModoOper1 = 0; cicloON_1 = 0; cicloOFF_1 = 0; 
+      forcaLiga1    = 0;                                          // se for para o modo Manual habilita botões
+      forcaDESLiga1 = 0;
+      timer_Motor1  = 0;                                          // zera o temporizador
+      varModoOper1  = 0; cicloON_1 = 0; cicloOFF_1 = 0; 
       preferences.begin  ("my-app", false);                       // inicia 
       preferences.putUInt("varModoOper1", varModoOper1);          // grava na NVS
       preferences.end();
@@ -1261,38 +1264,41 @@ void timerButtonAPP(){                        // timer de botao pressionado no a
  // *************************************************************************** //
  //            Interações do temporizador de botoes do APP e Silo 2
  // *************************************************************************** //
- if (remoteLiga2 == 1){
-  //forcaDESLiga2 = 0;
-  forcaLiga2 = remoteLiga2;
-  Serial.println("Silo 2 - Comando remoto forca LIGAR executado!");
-  }
+ if (remoteLiga2 == 1 && varModoOper2 == 0){                     // se apertar o botao ON e estiver em Manual
+     forcaDESLiga2 = 0;
+     forcaLiga2 = remoteLiga2;
+     Serial.println("Silo 2 - Comando remoto forca LIGAR executado!");
+     }
 
-if (remoteDESLiga2 == 1){
-  //forcaLiga2 = 0;
-  forcaDESLiga2 = remoteDESLiga2;
-  Serial.println("Silo 2 - Comando remoto forca DESLIGAR excutado!");
-  }
+ if (remoteDESLiga2 == 1 && varModoOper2 == 0){                  // se apertar o botao OFF e estiver em Manual
+     forcaLiga2 = 0; 
+     forcaDESLiga2 = remoteDESLiga2;
+     Serial.println("Silo 2 - Comando remoto forca DESLIGAR excutado!");
+     }
 
-if (remoteManual2 == 1){                                        // seta varModoOper1 em modo Manual (0)
-  varModoOper2 = 0; cicloON_2 = 0; cicloOFF_2 = 0; 
-  preferences.begin  ("my-app", false);                       // inicia 
-  preferences.putUInt("varModoOper2", varModoOper2);          // grava na NVS
-  preferences.end();
-  Serial.println("Silo 2 - Recebido set de comando para modo Remoto do APP...");
-  }
+ if (remoteManual2 == 1){                                        // seta varModoOper2 em modo Manual (0)
+     forcaLiga2    = 0;                                          // se for para o modo Manual habilita botões
+     forcaDESLiga2 = 0;
+     timer_Motor2  = 0;  
+     varModoOper2  = 0; cicloON_2 = 0; cicloOFF_2 = 0; 
+     preferences.begin  ("my-app", false);                       // inicia 
+     preferences.putUInt("varModoOper2", varModoOper2);          // grava na NVS
+     preferences.end();
+     Serial.println("Silo 2 - Recebido set de comando para modo Remoto do APP...");
+     }
 
-if (remoteAgendamento2 == 1){                                    // seta varModoOper1 em modo Agendamento (1)
+if (remoteAgendamento2 == 1){                                    // seta varModoOper2 em modo Agendamento (1)
   varModoOper2 = 1; cicloON_2 = 0; cicloOFF_2 = 0; 
-  preferences.begin  ("my-app", false);                        // inicia 
-  preferences.putUInt("varModoOper2", varModoOper2 );          // grava na NVS
+  preferences.begin  ("my-app", false);                          // inicia 
+  preferences.putUInt("varModoOper2", varModoOper2 );            // grava na NVS
   preferences.end();
   Serial.println("Silo 2 - Recebido set de comando para modo Agendamento do APP...");
   }
 
-if (remoteAuto2 == 1){                                           // seta varModoOper1 em modo Automático (2)
+if (remoteAuto2 == 1){                                           // seta varModoOper2 em modo Automático (2)
   varModoOper2 = 2; cicloON_2 = 0; cicloOFF_2 = 0; 
-  preferences.begin  ("my-app", false);                        // inicia 
-  preferences.putUInt("varModoOper2", varModoOper2 );          // grava na NVS
+  preferences.begin  ("my-app", false);                          // inicia 
+  preferences.putUInt("varModoOper2", varModoOper2 );            // grava na NVS
   preferences.end();
   Serial.println("Silo 2 - Recebido set de comando para modo Automatico do APP...");
   }
@@ -1300,38 +1306,41 @@ if (remoteAuto2 == 1){                                           // seta varModo
  // *************************************************************************** //
  //            Interações do temporizador de botoes do APP e Silo 3
  // *************************************************************************** //
- if (remoteLiga3 == 1){
-  //forcaDESLiga3 = 0;
-  forcaLiga3 = remoteLiga3;
-  Serial.println("Silo 3 - Comando remoto forca LIGAR executado!");
-  }
+ if (remoteLiga3 == 1 && varModoOper3 == 0){                     // se apertar o botao ON e estiver em Manual
+     forcaDESLiga3 = 0;
+     forcaLiga3 = remoteLiga3;
+     Serial.println("Silo 3 - Comando remoto forca LIGAR executado!");
+     }
 
-if (remoteDESLiga3 == 1){
-  //forcaLiga3 = 0;
-  forcaDESLiga3 = remoteDESLiga3;
-  Serial.println("Silo 3 - Comando remoto forca DESLIGAR excutado!");
-  }
+ if (remoteDESLiga3 == 1 && varModoOper3 == 0){                  // se apertar o botao OFF e estiver em Manual
+     forcaLiga3 = 0;
+     forcaDESLiga3 = remoteDESLiga3;
+     Serial.println("Silo 3 - Comando remoto forca DESLIGAR excutado!");
+     }
 
-if (remoteManual3 == 1){                                        // seta varModoOper1 em modo Manual (0)
-  varModoOper3 = 0; cicloON_3 = 0; cicloOFF_3 = 0; 
-  preferences.begin  ("my-app", false);                       // inicia 
-  preferences.putUInt("varModoOper3", varModoOper3);          // grava na NVS
-  preferences.end();
-  Serial.println("Silo 3 - Recebido set de comando para modo Remoto do APP...");
-  }
+ if (remoteManual3 == 1){                                        // seta varModoOper3 em modo Manual (0)
+     forcaLiga3    = 0;                                          // se for para o modo Manual habilita botões
+     forcaDESLiga3 = 0;
+     timer_Motor3  = 0;  
+     varModoOper3  = 0; cicloON_3 = 0; cicloOFF_3 = 0; 
+     preferences.begin  ("my-app", false);                       // inicia 
+     preferences.putUInt("varModoOper3", varModoOper3);          // grava na NVS
+     preferences.end();
+     Serial.println("Silo 3 - Recebido set de comando para modo Remoto do APP...");
+     }
 
-if (remoteAgendamento3 == 1){                                    // seta varModoOper1 em modo Agendamento (1)
+if (remoteAgendamento3 == 1){                                    // seta varModoOper3 em modo Agendamento (1)
   varModoOper3 = 1; cicloON_3 = 0; cicloOFF_3 = 0; 
-  preferences.begin  ("my-app", false);                        // inicia 
-  preferences.putUInt("varModoOper3", varModoOper3 );          // grava na NVS
+  preferences.begin  ("my-app", false);                          // inicia 
+  preferences.putUInt("varModoOper3", varModoOper3 );            // grava na NVS
   preferences.end();
   Serial.println("Silo 3 - Recebido set de comando para modo Agendamento do APP...");
   }
 
-if (remoteAuto3 == 1){                                           // seta varModoOper1 em modo Automático (2)
+if (remoteAuto3 == 1){                                           // seta varModoOper3 em modo Automático (2)
   varModoOper3 = 2; cicloON_3 = 0; cicloOFF_3 = 0; 
-  preferences.begin  ("my-app", false);                        // inicia 
-  preferences.putUInt("varModoOper3", varModoOper3 );          // grava na NVS
+  preferences.begin  ("my-app", false);                          // inicia 
+  preferences.putUInt("varModoOper3", varModoOper3 );            // grava na NVS
   preferences.end();
   Serial.println("Silo 3 - Recebido set de comando para modo Automatico do APP...");
   }
@@ -1503,7 +1512,7 @@ void getDataHora(){
 
 void ComandoOutput() {
 //Blynk.virtualWrite(V45, currentDay, "/", currentMonth, " ", currentHour, ":", currentMin, " -", timer_Motor1," Timer Motores");
-//Blynk.virtualWrite(V45, currentDay, "/", currentMonth, " ", currentHour, ":", currentMin, " -", varModoOper1," MODO");
+//Blynk.virtualWrite(V45, currentDay, "/", currentMonth, " ", currentHour, ":", currentMin, " -", varModoOper2," MODO");
 
   // *************************************************************************** //
   //                          Controle de saidas Silo 1                          //
@@ -1516,7 +1525,7 @@ void ComandoOutput() {
 
   switch (varModoOper1){
    case 0:                                               // 0 = esta no modo remoto - controle manual no app 
-    if (forcaLiga1==1){      // se o botao do app foi apertado
+    if (forcaLiga1==1 && statusMotor1){                 // se o botao do app foi apertado e motor esta desligado
        //Blynk.setProperty(V44, "color", "#EB4E45"); // laranja  "#F7CB46"
        Blynk.virtualWrite(V44, (timer_Motor1 % 2 == 0)); // pisca led V44 status do motor, terminar em número par!
        //Blynk.virtualWrite(V45, currentDay, "/", currentMonth, " ", currentHour, ":", currentMin, " -", timer_Motor1," Temporizando em Manual");
@@ -1535,9 +1544,10 @@ void ComandoOutput() {
           Wire.write(output_PLC);                        // 0 = rele ligado, 1 = desligado
           Wire.endTransmission();
      
-          timer_Motor1 = 0;
-          forcaLiga1 = 0;                                // força variavel a ficar em zero
-          cicloOFF_1 = 0;
+          timer_Motor1  = 0;
+          forcaLiga1    = 0;                                // força variavel a ficar em zero
+          forcaDESLiga1 = 0;
+          cicloOFF_1    = 0;
        }  
     }
 
@@ -1554,9 +1564,10 @@ void ComandoOutput() {
           Wire.write(output_PLC);                       // 0 = rele ligado, 1 = desligado
           Wire.endTransmission();
 
-          timer_Motor1 = 0;
+          timer_Motor1  = 0;
+          forcaLiga1    = 0;
           forcaDESLiga1 = 0;
-          cicloON_1 = 0;                   
+          cicloON_1     = 0;                   
      }
    break;
 
@@ -1576,8 +1587,10 @@ void ComandoOutput() {
           Wire.endTransmission();
 
           Serial.print (cicloOFF_1); Serial.println(" - CMD DESLIGAR VIA AGENDA !!!"); 
-          timer_Motor1 = 0;
-          cicloON_1 = 0;                                // habilita executar uma vez o comando 
+          timer_Motor1  = 0;
+          forcaLiga1    = 0;
+          forcaDESLiga1 = 0;
+          cicloON_1     = 0;                                // habilita executar uma vez o comando 
           }
 
     } else if (statusMotor1){                        // enquanto o motor estiver desligado executa
@@ -1599,8 +1612,10 @@ void ComandoOutput() {
               Wire.write(output_PLC);                   // 0 = rele ligado, 1 = desligado
               Wire.endTransmission();
 
-              timer_Motor1 = 0;
-              cicloOFF_1 = 0;
+              timer_Motor1  = 0;
+              forcaLiga1    = 0;
+              forcaDESLiga1 = 0;
+              cicloOFF_1    = 0;
               }
             }
           }
@@ -1626,8 +1641,10 @@ void ComandoOutput() {
        Wire.write(output_PLC);                          // 0 = rele ligado, 1 = desligado
        Wire.endTransmission();
 
-       timer_Motor1 = 0;
-       cicloOFF_1   = 0;
+       timer_Motor1  = 0;
+       forcaLiga1    = 0;
+       forcaDESLiga1 = 0;
+       cicloOFF_1    = 0;
       }
      }
     } else if ((UmiExt -2) > setUmidade1) {             // enquanto umidade maior executa desliga
@@ -1645,8 +1662,10 @@ void ComandoOutput() {
         Wire.endTransmission();
 
         Serial.print (cicloOFF_1); Serial.println(" - CMD DESLIGAR VIA AUTO !!!"); 
-        timer_Motor1 = 0;
-        cicloON_1    = 0;                               // habilita executar uma vez o comando 
+        timer_Motor1  = 0;
+        forcaLiga1    = 0;
+        forcaDESLiga1 = 0;
+        cicloON_1     = 0;                               // habilita executar uma vez o comando 
         }
       }
     break;
@@ -1663,7 +1682,7 @@ if (timer_Motor2 > tempoAtivacao2){
 
  switch (varModoOper2){
   case 0:                                               // 0 = esta no modo remoto - controle manual no app 
-   if (forcaLiga2==1){      // se o botao do app foi apertado
+   if (forcaLiga2==1 && statusMotor2){      // se o botao do app foi apertado
       Blynk.virtualWrite(V72, (timer_Motor2 % 2 == 0)); // pisca led V44 status do motor, terminar em número par!
       //Blynk.virtualWrite(V45, currentDay, "/", currentMonth, " ", currentHour, ":", currentMin, " -", timer_Motor1," Temporizando em Manual");
       
@@ -1681,9 +1700,10 @@ if (timer_Motor2 > tempoAtivacao2){
          Wire.write(output_PLC);                        // 0 = rele ligado, 1 = desligado
          Wire.endTransmission();
     
-         timer_Motor2 = 0;
-         forcaLiga2   = 0;                              // força variavel a ficar em zero
-         cicloOFF_2   = 0;
+         timer_Motor2  = 0;
+         forcaLiga2    = 0;                             // força variavel a ficar em zero
+         forcaDESLiga2 = 0;
+         cicloOFF_2    = 0;
       }  
    }
 
@@ -1701,6 +1721,7 @@ if (timer_Motor2 > tempoAtivacao2){
          Wire.endTransmission();
 
          timer_Motor2  = 0;
+         forcaLiga2    = 0;                            // força variavel a ficar em zero
          forcaDESLiga2 = 0;
          cicloON_2     = 0;                   
     }
@@ -1722,8 +1743,10 @@ if (timer_Motor2 > tempoAtivacao2){
          Wire.endTransmission();
 
          Serial.print (cicloOFF_2); Serial.println(" - CMD DESLIGAR VIA AGENDA !!!"); 
-         timer_Motor2 = 0;
-         cicloON_2    = 0;                             // habilita executar uma vez o comando 
+         timer_Motor2  = 0;
+         forcaLiga2    = 0;                            // força variavel a ficar em zero
+         forcaDESLiga2 = 0;
+         cicloON_2     = 0;                            // habilita executar uma vez o comando 
          }
 
    } else if (oldStatusMotor2){                        // enquanto o motor estiver desligado executa
@@ -1745,8 +1768,10 @@ if (timer_Motor2 > tempoAtivacao2){
              Wire.write(output_PLC);                   // 0 = rele ligado, 1 = desligado
              Wire.endTransmission();
 
-             timer_Motor2 = 0;
-             cicloOFF_2   = 0;
+             timer_Motor2  = 0;
+             forcaLiga2    = 0;                        // força variavel a ficar em zero
+             forcaDESLiga2 = 0;
+             cicloOFF_2    = 0;
              }
            }
          }
@@ -1772,8 +1797,10 @@ if (timer_Motor2 > tempoAtivacao2){
       Wire.write(output_PLC);                          // 0 = rele ligado, 1 = desligado
       Wire.endTransmission();
 
-      timer_Motor2 = 0;
-      cicloOFF_2   = 0;
+      timer_Motor2  = 0;
+      forcaLiga2    = 0;                               // força variavel a ficar em zero
+      forcaDESLiga2 = 0;
+      cicloOFF_2    = 0;
      }
     }
    } else if ((UmiExt -2) > setUmidade2) {             // enquanto umidade maior executa desliga
@@ -1791,8 +1818,10 @@ if (timer_Motor2 > tempoAtivacao2){
        Wire.endTransmission();
 
        Serial.print (cicloOFF_2); Serial.println(" - CMD DESLIGAR VIA AUTO !!!"); 
-       timer_Motor2 = 0;
-       cicloON_2    = 0;                               // habilita executar uma vez o comando 
+       timer_Motor2  = 0;
+       forcaLiga2    = 0;                             // força variavel a ficar em zero
+       forcaDESLiga2 = 0;
+       cicloON_2     = 0;                             // habilita executar uma vez o comando 
        }
      }
    break;
@@ -1809,7 +1838,7 @@ if (timer_Motor3 > tempoAtivacao3){
 
  switch (varModoOper3){
   case 0:                                               // 0 = esta no modo remoto - controle manual no app 
-   if (forcaLiga3==1){      // se o botao do app foi apertado
+   if (forcaLiga3==1 && statusMotor3){      // se o botao do app foi apertado
       Blynk.virtualWrite(V92, (timer_Motor3 % 2 == 0)); // pisca led V44 status do motor, terminar em número par!
       //Blynk.virtualWrite(V45, currentDay, "/", currentMonth, " ", currentHour, ":", currentMin, " -", timer_Motor1," Temporizando em Manual");
       
@@ -1827,9 +1856,10 @@ if (timer_Motor3 > tempoAtivacao3){
          Wire.write(output_PLC);                        // 0 = rele ligado, 1 = desligado
          Wire.endTransmission();
 
-         timer_Motor3 = 0;
-         forcaLiga3   = 0;                              // força variavel a ficar em zero
-         cicloOFF_3   = 0;
+         timer_Motor3  = 0;
+         forcaLiga3    = 0;                             // força variavel a ficar em zero
+         forcaDESLiga3 = 0;
+         cicloOFF_3    = 0;
       }  
    }
 
@@ -1846,9 +1876,10 @@ if (timer_Motor3 > tempoAtivacao3){
          Wire.write(output_PLC);                       // 0 = rele ligado, 1 = desligado
          Wire.endTransmission();
 
-         timer_Motor3 = 0;
+         timer_Motor3  = 0;
+         forcaLiga3    = 0;                            // força variavel a ficar em zero
          forcaDESLiga3 = 0;
-         cicloON_3 = 0;                   
+         cicloON_3     = 0;                   
     }
   break;
 
@@ -1868,8 +1899,10 @@ if (timer_Motor3 > tempoAtivacao3){
          Wire.endTransmission();
 
          Serial.print (cicloOFF_3); Serial.println(" - CMD DESLIGAR VIA AGENDA !!!"); 
-         timer_Motor3 = 0;
-         cicloON_3 = 0;                                // habilita executar uma vez o comando 
+         timer_Motor3  = 0;
+         forcaLiga3    = 0;                            // força variavel a ficar em zero
+         forcaDESLiga3 = 0;
+         cicloON_3     = 0;                            // habilita executar uma vez o comando 
          }
 
    } else if (oldStatusMotor3){                        // enquanto o motor estiver desligado executa
@@ -1891,8 +1924,10 @@ if (timer_Motor3 > tempoAtivacao3){
              Wire.write(output_PLC);                   // 0 = rele ligado, 1 = desligado
              Wire.endTransmission();
 
-             timer_Motor3 = 0;
-             cicloOFF_3   = 0;
+             timer_Motor3  = 0;
+             forcaLiga3    = 0;                        // força variavel a ficar em zero
+             forcaDESLiga3 = 0;
+             cicloOFF_3    = 0;
              }
            }
          }
@@ -1918,8 +1953,10 @@ if (timer_Motor3 > tempoAtivacao3){
       Wire.write(output_PLC);                          // 0 = rele ligado, 1 = desligado
       Wire.endTransmission();
 
-      timer_Motor3 = 0;
-      cicloOFF_3   = 0;
+      timer_Motor3  = 0;
+      forcaLiga3    = 0;                               // força variavel a ficar em zero
+      forcaDESLiga3 = 0;
+      cicloOFF_3    = 0;
      }
     }
    } else if ((UmiExt -2) > setUmidade3) {             // enquanto umidade maior executa desliga
@@ -1937,8 +1974,10 @@ if (timer_Motor3 > tempoAtivacao3){
        Wire.endTransmission();
 
        Serial.print (cicloOFF_3); Serial.println(" - CMD DESLIGAR VIA AUTO !!!"); 
-       timer_Motor3 = 0;
-       cicloON_3    = 0;                               // habilita executar uma vez o comando 
+       timer_Motor3  = 0;
+       forcaLiga3    = 0;                              // força variavel a ficar em zero
+       forcaDESLiga3 = 0;
+       cicloON_3     = 0;                              // habilita executar uma vez o comando 
        }
      }
    break;
