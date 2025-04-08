@@ -38,7 +38,7 @@
 //#define BLYNK_TEMPLATE_NAME      "Área de Teste"
 //#define Slave_ID_EXT             1 // sensor CWT
 
-#define BLYNK_FIRMWARE_VERSION   "0.1.6"
+#define BLYNK_FIRMWARE_VERSION   "0.1.7"
 //#define BLYNK_PRINT Serial
 //#define BLYNK_DEBUG   
 //#define APP_DEBUG
@@ -1647,7 +1647,7 @@ void ComandoOutput() {
        cicloOFF_1    = 0;
       }
      }
-    } else if ((UmiExt -2) > setUmidade1) {             // enquanto umidade maior executa desliga
+    } else if ((UmiExt -4) > setUmidade1) {             // enquanto umidade maior executa desliga
         for (cicloOFF_1; cicloOFF_1 < 1; cicloOFF_1++) {    
         //Blynk.virtualWrite(V45, currentDay, "/", currentMonth, " ", currentHour, ":", currentMin," Silo 1 - Cmd desligar Auto");              
         // Desliga Silo 1 = pulsa a saida 2
@@ -1803,7 +1803,7 @@ if (timer_Motor2 > tempoAtivacao2){
       cicloOFF_2    = 0;
      }
     }
-   } else if ((UmiExt -2) > setUmidade2) {             // enquanto umidade maior executa desliga
+   } else if ((UmiExt -4) > setUmidade2) {             // enquanto umidade maior executa desliga
        for (cicloOFF_2; cicloOFF_2 < 1; cicloOFF_2++) {    
        //Blynk.virtualWrite(V45, currentDay, "/", currentMonth, " ", currentHour, ":", currentMin," Silo 2 - Cmd desligar Auto");              
        // Desliga Silo 2 = pulsa a saida 4
@@ -1959,7 +1959,7 @@ if (timer_Motor3 > tempoAtivacao3){
       cicloOFF_3    = 0;
      }
     }
-   } else if ((UmiExt -2) > setUmidade3) {             // enquanto umidade maior executa desliga
+   } else if ((UmiExt -4) > setUmidade3) {             // enquanto umidade maior executa desliga
        for (cicloOFF_3; cicloOFF_3 < 1; cicloOFF_3++) {    
        //Blynk.virtualWrite(V45, currentDay, "/", currentMonth, " ", currentHour, ":", currentMin," Silo 3 - Cmd desligar Auto");              
        // Desliga Silo 3 = pulsa a saida 6
