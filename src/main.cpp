@@ -38,7 +38,7 @@
 //#define BLYNK_TEMPLATE_NAME      "Área de Teste"
 //#define Slave_ID_EXT             1 // sensor CWT
 
-#define BLYNK_FIRMWARE_VERSION   "0.1.7"
+#define BLYNK_FIRMWARE_VERSION   "0.1.8"
 //#define BLYNK_PRINT Serial
 //#define BLYNK_DEBUG   
 //#define APP_DEBUG
@@ -250,14 +250,20 @@ void ResetReason(void) {
 // -----------------------------------  Fim Watchdog e ResetReason ----------------------------------- 
 
 #include <ModbusMaster.h>
-ModbusMaster ExtSensor;           // Sensor externo 4x1 (antigo node2) 
-//ModbusMaster ExtSensorCWT;           // Sensor externo CWT
+ModbusMaster ExtSensor;               // Sensor externo 4x1 (antigo node2) 
+//ModbusMaster ExtSensorCWT;          // Sensor externo CWT
 
 // sensor MODBUS 4x1 - Slave ID 32
 // sensor MODBUS CWT - Slave ID 01
-int TempExt    = 0;    int UmiExt = 0; 
-//int PresaoExt  = 0;    int LuxExt = 0;
- 
+int TempExt    = 0,
+    UmiExt     = 100;  
+//int PresaoExt  = 0,
+//int LuxExt     = 0;  
+
+#define samples            20           // quantidade de amostras para cálculo da média móvel 
+int matriz_samples [samples];           // vetor para o deslocamento dos valores da média móvel
+                                        // no setup inicia elementos do vetor em "100% de Umidade"
+int average_UmiExt     = 100;           // recebe o valor de média móvel (average), inicia em 100%
 
 // ------ protótipo de funções ------
 //void heartBeat(void);
@@ -268,6 +274,7 @@ void ComandoOutput(void);
 void timerButtonAPP(void);
 void getDataHora(void);
 void MODBUS_Sensor(void);
+long moving_average();
 // ------         FIM          ------
 
 void Main2(){
@@ -335,11 +342,11 @@ void Main2(){
   display.setTextSize(1); 
   display.setCursor(0, 57);                   // coluna, linha 68, 57 sem rssi (44,57);
 
-  display.print("U:");
-  display.print(UmiExt);        // umidade externa
-  display.print('%');
-  display.print(" ");
   display.print(rssi);
+  display.print(" ");
+  display.print("U:");
+  display.print(average_UmiExt);        // umidade externa
+  display.print('%');
   display.print(" ");
 
 /*     Desabilitado o desenho das 4 barras indicadoras de nivel de RF
@@ -612,18 +619,28 @@ void Main2(){
   sendLogReset();    // depois de executar uma vez manda o log 
   getDataHora();     // usa aproximadamente  10ms
   ComandoOutput();   // usa aproximadamente 500ms
-  MODBUS_Sensor();   // usa aproximadamente  50ms
+  //MODBUS_Sensor();   // usa aproximadamente  50ms
+  //average_UmiExt = moving_average(); // busca a média móvel da UmiExt
 
+  /*
   //Envio dos dados que serão armazenados. Tenta enviar por até 60 segundos.
   if (currentMin == minAtualiza && currentSec > 0){
     Blynk.beginGroup();                             // https://docs.blynk.io/en/blynk-library-firmware-api/virtual-pins
       Blynk.virtualWrite(V0, UmiExt);             
-      Blynk.virtualWrite(V1, TempExt);
+      Blynk.virtualWrite(V1, average_UmiExt);
     Blynk.endGroup();
     //Blynk.virtualWrite(V45, currentDay, "/", currentMonth, " ", currentHour, ":", currentMin, " LOG de Temp. e Umidade enviado");
     minAtualiza = minAtualiza + 15;                 // soma 15 a cada 15 minutos
     if (minAtualiza > 50) {minAtualiza = 0;}        // minAtualiza usado para enviar a cada 15 minutos
   }
+  */
+    //Envio dos dados que serão armazenados a cada 60 segundos.
+    if (currentSec == 0){
+      Blynk.beginGroup();                             // https://docs.blynk.io/en/blynk-library-firmware-api/virtual-pins
+        Blynk.virtualWrite(V0, UmiExt);             
+        Blynk.virtualWrite(V1, average_UmiExt);
+      Blynk.endGroup();
+    }
 
   Serial.printf("Período (ms) do Main2: %u\n", (millis() - tempo_start)); // cálculo do tempu utilizado até aqui
 
@@ -642,12 +659,23 @@ void MODBUS_Sensor(){
     UmiExt    = (ExtSensor.getResponseBuffer(0)/10);
     TempExt   = (ExtSensor.getResponseBuffer(1)/10);
 
-    Blynk.virtualWrite(V51, UmiExt);                     // Envia ao Blynk a informação do SENSOR EXTERNO 4x1
-    Blynk.virtualWrite(V52, TempExt);
-    Serial.print("Umidade Ext.:     "); Serial.print(UmiExt); Serial.println(" %");
-    Serial.print("Temperatura Ext.: "); Serial.print(TempExt); Serial.println(" C");
-  } Serial.print("\n"); delay(5);
+    average_UmiExt = moving_average();                   // busca a média móvel da UmiExt
 
+    Blynk.virtualWrite(V51, average_UmiExt);                     // Envia ao Blynk a informação do SENSOR EXTERNO 4x1
+    Blynk.virtualWrite(V52, TempExt);
+    Blynk.virtualWrite(V53, UmiExt);             // V53 é do contador de RESET's
+    Serial.print("Umidade Ext.:      "); Serial.print(UmiExt); Serial.println(" %");
+    Serial.print("Média Umidade Ext.:"); Serial.print(average_UmiExt); Serial.println(" %");
+    Serial.print("Temperatura Ext.:  "); Serial.print(TempExt); Serial.println(" C");
+  } Serial.print("\n"); delay(5);
+}
+
+long moving_average(){
+  for (int i = samples-1; i>0; i--) matriz_samples[i] = matriz_samples[i-1];   // desloca os elementos do vetor
+  matriz_samples[0] = UmiExt;                                         // posição inicial recebe o valor inicial
+  long acc = 0;                                                       // acumulador para a soma dos valores
+  for (int i=0; i<samples; i++) acc = acc + matriz_samples[i];        // soma os valores dos dados do vetor
+  return acc/samples;          // retorna a soma de todos os valores lidos dividido pelo número de amostras
 }
 
 void sendLogReset(){
@@ -1171,6 +1199,8 @@ void setup(){
   delay(10000);                               // delay necessário para o RTC DS1307 inicializar
   */
 
+  for (int i = samples-1; i>0; i--) matriz_samples[i] = 100;   // inicia elementos do vetor em "100% de Umidade"
+
   if (! RTC.begin()) {
      Serial.println("Não foi possível encontrar o RTC!");
      failMSG("FALHA RTC");
@@ -1189,8 +1219,8 @@ void setup(){
   configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);   // inicia e busca as infos de data e hora (NTP)
 
   edgentTimer.setInterval(1000L, Main2);                      // rotina se repete a cada XXXXL (milisegundos)
-  //edgentTimer.setInterval(5000L, NTPserverTime);
   edgentTimer.setInterval(5000L, timerButtonAPP);             // timer para receber os comandos do APP
+  edgentTimer.setInterval(10000L, MODBUS_Sensor);             // lê sensores MODBUS
   BlynkEdgent.begin();
   delay(100);
   Serial.println("--------------------------- SETUP Concluido ---------------------------");
@@ -1622,7 +1652,7 @@ void ComandoOutput() {
    break;
     
    case 2: 
-   if (UmiExt <= setUmidade1 && statusMotor1){       // enquanto umidade menor ou igual e motor off executa
+   if (average_UmiExt <= setUmidade1 && statusMotor1){       // enquanto umidade menor ou igual e motor off executa
     Blynk.virtualWrite(V44, (timer_Motor1 % 2 == 0));   // pisca led V44 status do motor, terminar em número par!
     //Blynk.virtualWrite(V45, currentDay, "/", currentMonth, " ", currentHour, ":", currentMin, " -", timer_Motor1," Temporizando em AUTO");
     
@@ -1647,7 +1677,7 @@ void ComandoOutput() {
        cicloOFF_1    = 0;
       }
      }
-    } else if ((UmiExt -4) > setUmidade1) {             // enquanto umidade maior executa desliga
+    } else if ((average_UmiExt -4) > setUmidade1) {             // enquanto umidade maior executa desliga
         for (cicloOFF_1; cicloOFF_1 < 1; cicloOFF_1++) {    
         //Blynk.virtualWrite(V45, currentDay, "/", currentMonth, " ", currentHour, ":", currentMin," Silo 1 - Cmd desligar Auto");              
         // Desliga Silo 1 = pulsa a saida 2
@@ -1778,7 +1808,7 @@ if (timer_Motor2 > tempoAtivacao2){
   break;
    
   case 2: 
-  if (UmiExt <= setUmidade2 && oldStatusMotor2){       // enquanto umidade menor ou igual e motor off executa
+  if (average_UmiExt <= setUmidade2 && oldStatusMotor2){       // enquanto umidade menor ou igual e motor off executa
    Blynk.virtualWrite(V72, (timer_Motor2 % 2 == 0));   // pisca led V44 status do motor, terminar em número par!
    //Blynk.virtualWrite(V45, currentDay, "/", currentMonth, " ", currentHour, ":", currentMin, " -", timer_Motor1," Temporizando em AUTO");
    
@@ -1803,7 +1833,7 @@ if (timer_Motor2 > tempoAtivacao2){
       cicloOFF_2    = 0;
      }
     }
-   } else if ((UmiExt -4) > setUmidade2) {             // enquanto umidade maior executa desliga
+   } else if ((average_UmiExt -4) > setUmidade2) {             // enquanto umidade maior executa desliga
        for (cicloOFF_2; cicloOFF_2 < 1; cicloOFF_2++) {    
        //Blynk.virtualWrite(V45, currentDay, "/", currentMonth, " ", currentHour, ":", currentMin," Silo 2 - Cmd desligar Auto");              
        // Desliga Silo 2 = pulsa a saida 4
@@ -1934,7 +1964,7 @@ if (timer_Motor3 > tempoAtivacao3){
   break;
    
   case 2: 
-  if (UmiExt <= setUmidade3 && oldStatusMotor3){       // enquanto umidade menor ou igual e motor off executa
+  if (average_UmiExt <= setUmidade3 && oldStatusMotor3){       // enquanto umidade menor ou igual e motor off executa
    Blynk.virtualWrite(V92, (timer_Motor3 % 2 == 0));   // pisca led V44 status do motor, terminar em número par!
    //Blynk.virtualWrite(V45, currentDay, "/", currentMonth, " ", currentHour, ":", currentMin, " -", timer_Motor1," Temporizando em AUTO");
    
@@ -1959,7 +1989,7 @@ if (timer_Motor3 > tempoAtivacao3){
       cicloOFF_3    = 0;
      }
     }
-   } else if ((UmiExt -4) > setUmidade3) {             // enquanto umidade maior executa desliga
+   } else if ((average_UmiExt -4) > setUmidade3) {             // enquanto umidade maior executa desliga
        for (cicloOFF_3; cicloOFF_3 < 1; cicloOFF_3++) {    
        //Blynk.virtualWrite(V45, currentDay, "/", currentMonth, " ", currentHour, ":", currentMin," Silo 3 - Cmd desligar Auto");              
        // Desliga Silo 3 = pulsa a saida 6
