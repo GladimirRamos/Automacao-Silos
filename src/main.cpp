@@ -38,7 +38,7 @@
 //#define BLYNK_TEMPLATE_NAME      "Área de Teste"
 //#define Slave_ID_EXT             1 // sensor CWT
 
-#define BLYNK_FIRMWARE_VERSION   "0.1.8"
+#define BLYNK_FIRMWARE_VERSION   "0.1.9"
 //#define BLYNK_PRINT Serial
 //#define BLYNK_DEBUG   
 //#define APP_DEBUG
@@ -659,15 +659,17 @@ void MODBUS_Sensor(){
     UmiExt    = (ExtSensor.getResponseBuffer(0)/10);
     TempExt   = (ExtSensor.getResponseBuffer(1)/10);
 
-    average_UmiExt = moving_average();                   // busca a média móvel da UmiExt
+    Serial.print("Umidade Ext.:          "); Serial.print(UmiExt); Serial.println(" %");
 
-    Blynk.virtualWrite(V51, average_UmiExt);                     // Envia ao Blynk a informação do SENSOR EXTERNO 4x1
+    average_UmiExt = moving_average();                   // busca a média móvel da UmiExt
+    Serial.print("Média Umidade Ext.:    "); Serial.print(average_UmiExt); Serial.println(" %");
+    Serial.print("Temperatura Ext.:      "); Serial.print(TempExt); Serial.println(" C");
+
+    Blynk.virtualWrite(V51, average_UmiExt);             // Envia ao Blynk a informação do SENSOR EXTERNO 4x1
     Blynk.virtualWrite(V52, TempExt);
-    Blynk.virtualWrite(V53, UmiExt);             // V53 é do contador de RESET's
-    Serial.print("Umidade Ext.:      "); Serial.print(UmiExt); Serial.println(" %");
-    Serial.print("Média Umidade Ext.:"); Serial.print(average_UmiExt); Serial.println(" %");
-    Serial.print("Temperatura Ext.:  "); Serial.print(TempExt); Serial.println(" C");
-  } Serial.print("\n"); delay(5);
+    Blynk.virtualWrite(V53, UmiExt);                     // V53 é do contador de RESET's
+
+  } Serial.print("\n"); delay(2);
 }
 
 long moving_average(){
@@ -1196,10 +1198,15 @@ void setup(){
   display.setCursor(5, 25);                  // coluna, linha 
   display.println("Iniciando!");             // informação
   display.display();                         // mostra na tela
-  delay(10000);                               // delay necessário para o RTC DS1307 inicializar
+  delay(10000);                              // delay necessário para o RTC DS1307 inicializar
   */
+ 
+  MODBUS_Sensor();                           // lê sensores MODBUS
+  for (int i = samples-1; i>-1; i--) 
+        matriz_samples[i] = UmiExt; //100;   // inicia todos os elementos do vetor com o valor de Umidade
 
-  for (int i = samples-1; i>0; i--) matriz_samples[i] = 100;   // inicia elementos do vetor em "100% de Umidade"
+  Serial.print("Primeira Média de Umidade Ext.: "); Serial.print(moving_average()); Serial.println(" %");
+  //moving_average();                          // calcula a primeira média móvel
 
   if (! RTC.begin()) {
      Serial.println("Não foi possível encontrar o RTC!");
@@ -1218,9 +1225,9 @@ void setup(){
   //rtc.adjust(DateTime(__DATE__, __TIME__));                 // seta o RTC com os parametros da data e hora da compilação
   configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);   // inicia e busca as infos de data e hora (NTP)
 
-  edgentTimer.setInterval(1000L, Main2);                      // rotina se repete a cada XXXXL (milisegundos)
-  edgentTimer.setInterval(5000L, timerButtonAPP);             // timer para receber os comandos do APP
-  edgentTimer.setInterval(10000L, MODBUS_Sensor);             // lê sensores MODBUS
+  edgentTimer.setInterval( 1000L, Main2);                     // rotina se repete a cada XXXXL (milisegundos)
+  edgentTimer.setInterval( 5000L, timerButtonAPP);            // timer para receber os comandos do APP
+  edgentTimer.setInterval(60000L, MODBUS_Sensor);             // lê sensores MODBUS a cada XXXXL (milisegundos)
   BlynkEdgent.begin();
   delay(100);
   Serial.println("--------------------------- SETUP Concluido ---------------------------");
