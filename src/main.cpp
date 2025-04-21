@@ -38,7 +38,7 @@
 //#define BLYNK_TEMPLATE_NAME      "Área de Teste"
 //#define Slave_ID_EXT             1 // sensor CWT
 
-#define BLYNK_FIRMWARE_VERSION   "0.1.9"
+#define BLYNK_FIRMWARE_VERSION   "0.2.0"
 //#define BLYNK_PRINT Serial
 //#define BLYNK_DEBUG   
 //#define APP_DEBUG
@@ -66,7 +66,7 @@ bool    sendBlynk = true;
   // ATENÇÃO AO WATCHDOG; AJUSTAR COM MARGEM DE ACORDO COM O TEMPO ABAIXO !!!
 int tempoStart  =     10; // tempo de espera em segundos para o inicio do sistema a cada reset minimo 10 segundos para RTC start
 int timerON     =      0; // usado para mostrar só uma vez a cada reset a tela inicial no diplay com a logomarca
-int minAtualiza =      0; // usado para enviar dados ao servidor a cada 15 minutos, começa a enviar no minAtualiza
+int minAtualiza =     30; // usado para enviar dados ao servidor a cada 15 minutos, começa a enviar no minAtualiza
 int BotaoRESET;           // BotaoRESET = Virtual do APP
 
 char monthString[25] = {"010203040506070809101112"};                // modelo 1
@@ -255,12 +255,12 @@ ModbusMaster ExtSensor;               // Sensor externo 4x1 (antigo node2)
 
 // sensor MODBUS 4x1 - Slave ID 32
 // sensor MODBUS CWT - Slave ID 01
-int TempExt    = 0,
+int TempExt    = 100,
     UmiExt     = 100;  
 //int PresaoExt  = 0,
 //int LuxExt     = 0;  
 
-#define samples            20           // quantidade de amostras para cálculo da média móvel 
+#define samples             3           // quantidade de amostras para cálculo da média móvel 
 int matriz_samples [samples];           // vetor para o deslocamento dos valores da média móvel
                                         // no setup inicia elementos do vetor em "100% de Umidade"
 int average_UmiExt     = 100;           // recebe o valor de média móvel (average), inicia em 100%
@@ -619,10 +619,7 @@ void Main2(){
   sendLogReset();    // depois de executar uma vez manda o log 
   getDataHora();     // usa aproximadamente  10ms
   ComandoOutput();   // usa aproximadamente 500ms
-  //MODBUS_Sensor();   // usa aproximadamente  50ms
-  //average_UmiExt = moving_average(); // busca a média móvel da UmiExt
 
-  /*
   //Envio dos dados que serão armazenados. Tenta enviar por até 60 segundos.
   if (currentMin == minAtualiza && currentSec > 0){
     Blynk.beginGroup();                             // https://docs.blynk.io/en/blynk-library-firmware-api/virtual-pins
@@ -630,10 +627,11 @@ void Main2(){
       Blynk.virtualWrite(V1, average_UmiExt);
     Blynk.endGroup();
     //Blynk.virtualWrite(V45, currentDay, "/", currentMonth, " ", currentHour, ":", currentMin, " LOG de Temp. e Umidade enviado");
-    minAtualiza = minAtualiza + 15;                 // soma 15 a cada 15 minutos
-    if (minAtualiza > 50) {minAtualiza = 0;}        // minAtualiza usado para enviar a cada 15 minutos
+    minAtualiza = minAtualiza + 10;                 // soma 15 a cada 15 minutos
+    if (minAtualiza > 51) {minAtualiza = 0;}        // minAtualiza usado para enviar a cada 15 minutos
   }
-  */
+  
+  /*
     //Envio dos dados que serão armazenados a cada 60 segundos.
     if (currentSec == 0){
       Blynk.beginGroup();                             // https://docs.blynk.io/en/blynk-library-firmware-api/virtual-pins
@@ -641,6 +639,7 @@ void Main2(){
         Blynk.virtualWrite(V1, average_UmiExt);
       Blynk.endGroup();
     }
+    */
 
   Serial.printf("Período (ms) do Main2: %u\n", (millis() - tempo_start)); // cálculo do tempu utilizado até aqui
 
@@ -654,7 +653,11 @@ void MODBUS_Sensor(){
   Serial.print("\n"); Serial.println("Sensor Externo ");
   Serial.print("Error = "); Serial.println( result2 );   // 0: ok, 226: falha
   Blynk.virtualWrite(V50, result2);                      // envia Status do Sensor MODBUS (0 = OK, 226 = falha)
-  
+  // Gera os alarmes de push e no display no app - Blynk
+  if (result2 != 0) {Blynk.virtualWrite(V45, currentDay, "/", currentMonth, " ", currentHour, ":", currentMin, " FALHA NO SENSOR EXTERNO");
+                     Blynk.logEvent("falha_de_sensor");
+                     }
+
   if (result2 == ExtSensor.ku8MBSuccess){
     UmiExt    = (ExtSensor.getResponseBuffer(0)/10);
     TempExt   = (ExtSensor.getResponseBuffer(1)/10);
@@ -665,9 +668,9 @@ void MODBUS_Sensor(){
     Serial.print("Média Umidade Ext.:    "); Serial.print(average_UmiExt); Serial.println(" %");
     Serial.print("Temperatura Ext.:      "); Serial.print(TempExt); Serial.println(" C");
 
-    Blynk.virtualWrite(V51, average_UmiExt);             // Envia ao Blynk a informação do SENSOR EXTERNO 4x1
+    Blynk.virtualWrite(V51, average_UmiExt);             // Envia ao Blynk a informação
     Blynk.virtualWrite(V52, TempExt);
-    Blynk.virtualWrite(V53, UmiExt);                     // V53 é do contador de RESET's
+    Blynk.virtualWrite(V53, UmiExt);                     // V53 é do contador de RESET's - REMOVER PÓS TESTES
 
   } Serial.print("\n"); delay(2);
 }
@@ -689,7 +692,9 @@ void sendLogReset(){
     Blynk.virtualWrite(V45, currentDay, "/", currentMonth, " ", currentHour, ":", currentMin, "",resetReasonName(r), " ",counterRST);
     Blynk.virtualWrite(V53, counterRST);                        // envia para tela do app
     Blynk.syncVirtual (V40, V69, V89);                          // sincroniza datastream de agendamentos
-    delay(500);
+    delay(250);
+    MODBUS_Sensor();                                            // quando conectar lê sensor e envia os dados
+    delay(250);
     // se reiniciar por (1) POWER ON RESET
     if (r == 1){
       Blynk.virtualWrite(V2, 255);                        // envia 1 para sinalização push no app via automação
@@ -1204,9 +1209,9 @@ void setup(){
   MODBUS_Sensor();                           // lê sensores MODBUS
   for (int i = samples-1; i>-1; i--) 
         matriz_samples[i] = UmiExt; //100;   // inicia todos os elementos do vetor com o valor de Umidade
-
-  Serial.print("Primeira Média de Umidade Ext.: "); Serial.print(moving_average()); Serial.println(" %");
-  //moving_average();                          // calcula a primeira média móvel
+   
+  average_UmiExt = moving_average();
+  Serial.print("Primeira Média de Umidade Ext.: "); Serial.print(average_UmiExt); Serial.println(" %");
 
   if (! RTC.begin()) {
      Serial.println("Não foi possível encontrar o RTC!");
@@ -1225,9 +1230,9 @@ void setup(){
   //rtc.adjust(DateTime(__DATE__, __TIME__));                 // seta o RTC com os parametros da data e hora da compilação
   configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);   // inicia e busca as infos de data e hora (NTP)
 
-  edgentTimer.setInterval( 1000L, Main2);                     // rotina se repete a cada XXXXL (milisegundos)
-  edgentTimer.setInterval( 5000L, timerButtonAPP);            // timer para receber os comandos do APP
-  edgentTimer.setInterval(60000L, MODBUS_Sensor);             // lê sensores MODBUS a cada XXXXL (milisegundos)
+  edgentTimer.setInterval(  1000L, Main2);                     // rotina se repete a cada XXXXL (milisegundos)
+  edgentTimer.setInterval(  5000L, timerButtonAPP);            // timer para receber os comandos do APP
+  edgentTimer.setInterval(600000L, MODBUS_Sensor);             // lê sensores MODBUS a cada XXXXL (milisegundos)
   BlynkEdgent.begin();
   delay(100);
   Serial.println("--------------------------- SETUP Concluido ---------------------------");
