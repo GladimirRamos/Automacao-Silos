@@ -38,7 +38,7 @@
 //#define BLYNK_TEMPLATE_NAME      "Área de Teste"
 //#define Slave_ID_EXT             1 // sensor CWT
 
-#define BLYNK_FIRMWARE_VERSION   "0.2.0"
+#define BLYNK_FIRMWARE_VERSION   "0.2.1"
 //#define BLYNK_PRINT Serial
 //#define BLYNK_DEBUG   
 //#define APP_DEBUG
@@ -66,7 +66,7 @@ bool    sendBlynk = true;
   // ATENÇÃO AO WATCHDOG; AJUSTAR COM MARGEM DE ACORDO COM O TEMPO ABAIXO !!!
 int tempoStart  =     10; // tempo de espera em segundos para o inicio do sistema a cada reset minimo 10 segundos para RTC start
 int timerON     =      0; // usado para mostrar só uma vez a cada reset a tela inicial no diplay com a logomarca
-int minAtualiza =     30; // usado para enviar dados ao servidor a cada 15 minutos, começa a enviar no minAtualiza
+int minAtualiza =      0; // usado para enviar dados ao servidor a cada 15 minutos, começa a enviar no minAtualiza
 int BotaoRESET;           // BotaoRESET = Virtual do APP
 
 char monthString[25] = {"010203040506070809101112"};                // modelo 1
@@ -260,7 +260,7 @@ int TempExt    = 100,
 //int PresaoExt  = 0,
 //int LuxExt     = 0;  
 
-#define samples             3           // quantidade de amostras para cálculo da média móvel 
+#define samples             6           // quantidade de amostras para cálculo da média móvel 
 int matriz_samples [samples];           // vetor para o deslocamento dos valores da média móvel
                                         // no setup inicia elementos do vetor em "100% de Umidade"
 int average_UmiExt     = 100;           // recebe o valor de média móvel (average), inicia em 100%
@@ -627,8 +627,8 @@ void Main2(){
       Blynk.virtualWrite(V1, average_UmiExt);
     Blynk.endGroup();
     //Blynk.virtualWrite(V45, currentDay, "/", currentMonth, " ", currentHour, ":", currentMin, " LOG de Temp. e Umidade enviado");
-    minAtualiza = minAtualiza + 10;                 // soma 15 a cada 15 minutos
-    if (minAtualiza > 51) {minAtualiza = 0;}        // minAtualiza usado para enviar a cada 15 minutos
+    minAtualiza = minAtualiza + 5;                  // soma 15 a cada 15 minutos
+    if (minAtualiza > 56) {minAtualiza = 0;}        // minAtualiza usado para enviar a cada 15 minutos
   }
   
   /*
@@ -656,6 +656,7 @@ void MODBUS_Sensor(){
   // Gera os alarmes de push e no display no app - Blynk
   if (result2 != 0) {Blynk.virtualWrite(V45, currentDay, "/", currentMonth, " ", currentHour, ":", currentMin, " FALHA NO SENSOR EXTERNO");
                      Blynk.logEvent("falha_de_sensor");
+                     Blynk.virtualWrite(V2, 255);        // envia 255 para o led de sinalização
                      }
 
   if (result2 == ExtSensor.ku8MBSuccess){
@@ -670,7 +671,8 @@ void MODBUS_Sensor(){
 
     Blynk.virtualWrite(V51, average_UmiExt);             // Envia ao Blynk a informação
     Blynk.virtualWrite(V52, TempExt);
-    Blynk.virtualWrite(V53, UmiExt);                     // V53 é do contador de RESET's - REMOVER PÓS TESTES
+    //Blynk.virtualWrite(V53, UmiExt);                   // V53 é do contador de RESET's - REMOVER PÓS TESTES
+    Blynk.virtualWrite(V2, 0);                           // envia 0 para o led de sinalização
 
   } Serial.print("\n"); delay(2);
 }
@@ -695,8 +697,8 @@ void sendLogReset(){
     delay(250);
     MODBUS_Sensor();                                            // quando conectar lê sensor e envia os dados
     delay(250);
-    // se reiniciar por (1) POWER ON RESET
-    if (r == 1){
+    // se reiniciar por (1) POWER ON RESET, ou Software reboot
+    if (r == 1 || r == 3 ){
       Blynk.virtualWrite(V2, 255);                        // envia 1 para sinalização push no app via automação
       delay(3000);
       Blynk.virtualWrite(V2, 0);                          // envia 0 para "des_sinalizar" na automação
@@ -1232,7 +1234,7 @@ void setup(){
 
   edgentTimer.setInterval(  1000L, Main2);                     // rotina se repete a cada XXXXL (milisegundos)
   edgentTimer.setInterval(  5000L, timerButtonAPP);            // timer para receber os comandos do APP
-  edgentTimer.setInterval(600000L, MODBUS_Sensor);             // lê sensores MODBUS a cada XXXXL (milisegundos)
+  edgentTimer.setInterval(300000L, MODBUS_Sensor);             // lê sensores MODBUS a cada XXXXL (milisegundos)
   BlynkEdgent.begin();
   delay(100);
   Serial.println("--------------------------- SETUP Concluido ---------------------------");
