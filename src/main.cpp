@@ -38,7 +38,7 @@
 //#define BLYNK_TEMPLATE_NAME      "Área de Teste"
 //#define Slave_ID_EXT             1 // sensor CWT
 
-#define BLYNK_FIRMWARE_VERSION   "0.2.1"
+#define BLYNK_FIRMWARE_VERSION   "0.2.2"
 //#define BLYNK_PRINT Serial
 //#define BLYNK_DEBUG   
 //#define APP_DEBUG
@@ -477,8 +477,10 @@ void Main2(){
 
       if (statusMotor1){                              // vem do IN-1
         Blynk.virtualWrite(V45, currentDay, "/", currentMonth, " ", currentHour, ":", currentMin," Silo 1 - Motor Desligado");
-        } else {
+        Blynk.virtualWrite(V47, 0);                   // Envia ao Blynk informação para o push - Motor OFF
+      } else {
           Blynk.virtualWrite(V45, currentDay, "/", currentMonth, " ", currentHour, ":", currentMin," Silo 1 - Motor Ligado");
+          Blynk.virtualWrite(V47, 1);                 // Envia ao Blynk informação para o push - Motor ON
         }
       //Serial.println("Estado do motor alterou e foi gravado na memória...");
       //delay (5000);
@@ -535,8 +537,10 @@ void Main2(){
 
       if (statusMotor2){                              // vem do IN-3
         Blynk.virtualWrite(V45, currentDay, "/", currentMonth, " ", currentHour, ":", currentMin," Silo 2 - Motor Desligado");
-        } else {
+        Blynk.virtualWrite(V73, 0);                   // Envia ao Blynk informação para o push - Motor OFF  
+      } else {
           Blynk.virtualWrite(V45, currentDay, "/", currentMonth, " ", currentHour, ":", currentMin," Silo 2 - Motor Ligado");
+          Blynk.virtualWrite(V73, 1);                 // Envia ao Blynk informação para o push - Motor ON
         }
       //Serial.println("Estado do motor alterou e foi gravado na memória...");
       //delay (5000);
@@ -593,8 +597,10 @@ void Main2(){
 
       if (statusMotor3){                              // vem do IN-5
         Blynk.virtualWrite(V45, currentDay, "/", currentMonth, " ", currentHour, ":", currentMin," Silo 3 - Motor Desligado");
-        } else {
+        Blynk.virtualWrite(V93, 0);                   // Envia ao Blynk informação para o push - Motor OFF  
+      } else {
           Blynk.virtualWrite(V45, currentDay, "/", currentMonth, " ", currentHour, ":", currentMin," Silo 3 - Motor Ligado");
+          Blynk.virtualWrite(V93, 1);                 // Envia ao Blynk informação para o push - Motor ON
         }
       //Serial.println("Estado do motor alterou e foi gravado na memória...");
       //delay (5000);
@@ -660,7 +666,7 @@ void MODBUS_Sensor(){
                      }
 
   if (result2 == ExtSensor.ku8MBSuccess){
-    UmiExt    = (ExtSensor.getResponseBuffer(0)/10);
+    UmiExt    = (ExtSensor.getResponseBuffer(0)/10)-3;   // -3, calibracao com base na estacao externa
     TempExt   = (ExtSensor.getResponseBuffer(1)/10);
 
     Serial.print("Umidade Ext.:          "); Serial.print(UmiExt); Serial.println(" %");
