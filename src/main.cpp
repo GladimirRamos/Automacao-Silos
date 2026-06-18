@@ -38,7 +38,7 @@
 //#define BLYNK_TEMPLATE_NAME      "Área de Teste"
 //#define Slave_ID_EXT             1 // sensor CWT
 
-#define BLYNK_FIRMWARE_VERSION   "0.2.2"
+#define BLYNK_FIRMWARE_VERSION   "0.2.3"
 //#define BLYNK_PRINT Serial
 //#define BLYNK_DEBUG   
 //#define APP_DEBUG
@@ -666,7 +666,7 @@ void MODBUS_Sensor(){
                      }
 
   if (result2 == ExtSensor.ku8MBSuccess){
-    UmiExt    = (ExtSensor.getResponseBuffer(0)/10)-3;   // -3, calibracao com base na estacao externa
+    UmiExt    = (ExtSensor.getResponseBuffer(0)/10);     // -3, calibracao com base na estacao externa
     TempExt   = (ExtSensor.getResponseBuffer(1)/10);
 
     Serial.print("Umidade Ext.:          "); Serial.print(UmiExt); Serial.println(" %");
@@ -706,9 +706,8 @@ void sendLogReset(){
     // se reiniciar por (1) POWER ON RESET, ou Software reboot
     if (r == 1 || r == 3 ){
       Blynk.virtualWrite(V2, 255);                        // envia 1 para sinalização push no app via automação
-      delay(3000);
+      delay(6000);                                        // aguarda 5 segundos, limitacao de mensagens push do Blynk
       Blynk.virtualWrite(V2, 0);                          // envia 0 para "des_sinalizar" na automação
-      //Blynk.logEvent("falha_de_energia", String("Teste - Falha de Energia!"));
       Blynk.logEvent("falha_de_energia");                 // registra o evento falha_de_energia no servidor
       }
     sendBlynk = false;                                    // garante que só envia uma vez essas informações
